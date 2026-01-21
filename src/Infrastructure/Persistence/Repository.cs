@@ -75,6 +75,14 @@ public class Repository<T, TKey>(MyDbContext dbContext) : RepositoryBase<T, TKey
         var specificationResult = Specifications.SpecificationEvaluator.GetQuery(query, spec);
         return await specificationResult.ToListAsync(cancellationToken: ct);
     }
+
+    public async Task<IEnumerable<TProjection>> ListAsync<TProjection>(ISpecification<T> spec,
+        Expression<Func<T, TProjection>> selector, CancellationToken ct = default)
+    {
+        var query = DbSet.AsNoTracking();
+        var specificationResult = Specifications.SpecificationEvaluator.GetQuery(query, spec);
+        return await specificationResult.Select(selector).ToListAsync(cancellationToken: ct);
+    }
     public async Task<int> CountAsync(ISpecification<T> spec, bool asNoTracking = true, CancellationToken ct = default)
     {
         var query = asNoTracking ? DbSet.AsNoTracking() : DbSet.AsQueryable();
@@ -88,7 +96,14 @@ public class Repository<T, TKey>(MyDbContext dbContext) : RepositoryBase<T, TKey
         var specificationResult = Specifications.SpecificationEvaluator.GetQuery(query, spec);
         return await specificationResult.Select(selector).FirstOrDefaultAsync(cancellationToken: ct);
     }
-    
+
+    public async Task<Paginated<T>> PaginatedAsync(ISpecification<T> spec, CancellationToken ct = default)
+    {
+        var query = DbSet.AsNoTracking();
+        var specificationResult = Specifications.SpecificationEvaluator.GetQuery(query, spec);
+        var items  = await specificationResult.ToListAsync(ct);
+        return new Paginated<T>(items, TotalCount: 0, 0, spec.Take!.Value);
+    }
     
     // Old version
     public async Task<T?> GetByIdAsync(TKey id, Func<IQueryable<T>, IQueryable<T>>? includes = null, bool asNoTracking = true, CancellationToken ct = default)
