@@ -1,5 +1,6 @@
 using Application.Inventory.Abstractions;
 using Application.Inventory.Dtos;
+using Application.Inventory.Interfaces;
 using Application.Inventory.Services;
 using Application.Inventory.Validators;
 using FluentValidation;

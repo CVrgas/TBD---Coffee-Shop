@@ -1,8 +1,3 @@
-using System.Diagnostics.CodeAnalysis;
-using System.Globalization;
-using System.Text.Json;
-using Application.Catalog.Dtos;
-
 namespace Application.Common.Abstractions.Persistence.Paginated;
 
 public abstract record PaginatedRequestBase : SortOptionsBase

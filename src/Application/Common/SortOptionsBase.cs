@@ -4,7 +4,6 @@ namespace Application.Common;
 
 public abstract record SortOptionsBase
 {
-    [FromQuery(Name = "sort")] 
     public string? Sort { get; init; } = null;
     
     public SortOption SortOption => ToSortOption();

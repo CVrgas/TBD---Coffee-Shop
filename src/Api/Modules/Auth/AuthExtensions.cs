@@ -1,7 +1,7 @@
 using Application.Auth.Dtos;
+using Application.Auth.Interfaces;
 using Application.Auth.Services;
 using Application.Auth.Validators;
-using Domain.User;
 using FluentValidation;
 
 namespace Api.Modules.Auth;

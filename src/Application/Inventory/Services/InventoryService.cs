@@ -1,8 +1,10 @@
 using Application.Common.Abstractions.Envelope;
 using Application.Common.Abstractions.Persistence;
 using Application.Common.Abstractions.Persistence.Repository;
+using Application.Common.Interfaces;
 using Application.Common.Interfaces.User;
 using Application.Inventory.Dtos;
+using Application.Inventory.Interfaces;
 using Domain.Inventory;
 using Domain.User;
 using Microsoft.Extensions.Logging;
@@ -36,10 +38,7 @@ public class InventoryService(
     {
         if(!UserHasPermit) return Envelope.Unauthorized();
         
-        var item = await stockRepository.GetAsync(
-            si => si.IsActive && si.ProductId == adjustStockDto.ProductId,
-            asNoTracking: false,
-            ct: ct);
+        var item = await stockRepository.GetAsync(new AdjustSpec(adjustStockDto.ProductId), asNoTracking: false, ct: ct);
         if(item == null) return Envelope.NotFound("No stock for this item found");
             
         stockRepository.AttachWithRowVersion(item, adjustStockDto.RowVersion);
@@ -77,3 +76,5 @@ public class InventoryService(
         return Envelope.Ok();
     }
 }
+
+internal class AdjustSpec(int productId) : Specification<StockItem>(item => item.IsActive && item.ProductId == productId);

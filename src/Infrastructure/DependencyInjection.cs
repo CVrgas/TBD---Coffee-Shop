@@ -33,7 +33,13 @@ public static class DependencyInjection
     public static IServiceCollection AddInfrastructure(this IServiceCollection services, IConfiguration config)
     {
         services.AddDbContext<MyDbContext>(opt =>
-            opt.UseSqlServer(config.GetConnectionString("DefaultConnection")));
+            opt.UseSqlServer(config.GetConnectionString("DefaultConnection"), sqlOptions =>
+            {
+                sqlOptions.EnableRetryOnFailure(
+                    maxRetryCount: 3,
+                    maxRetryDelay: TimeSpan.FromSeconds(5),
+                    errorNumbersToAdd: null);
+            }));
 
         services.AddRedis(config.GetConnectionString("RedisConnection") ?? "Not connection string");
         

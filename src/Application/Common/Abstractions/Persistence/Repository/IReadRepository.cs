@@ -9,11 +9,13 @@ public interface IReadRepository<T, TKey> where T : class, IEntity<TKey>
     Task<T?> GetByIdAsync(TKey id, bool asNoTracking = true, CancellationToken ct = default); // lastest version.
     Task<T?> GetAsync(ISpecification<T> spec, bool asNoTracking = true, CancellationToken ct = default); // lastest version.
     Task<IEnumerable<T>> ListAsync(ISpecification<T> spec, bool asNoTracking = true, CancellationToken ct = default);
+    Task<IEnumerable<TProjection>> ListAsync<TProjection>(ISpecification<T> spec, Expression<Func<T, TProjection>> selector, CancellationToken ct = default);
     Task<int> CountAsync(ISpecification<T> spec, bool asNoTracking = true, CancellationToken ct = default);
     Task<TProjection?> GetAsync<TProjection>(ISpecification<T> spec, Expression<Func<T, TProjection>> selector, bool asNoTracking = true, CancellationToken ct = default); // lastest version.
+    Task<Paginated<T>> PaginatedAsync(ISpecification<T> spec, CancellationToken ct = default);
     
     // oldest version
-    Task<T?> GetByIdAsync(TKey id, Func<IQueryable<T>, IQueryable<T>>? includes = null, bool asNoTracking = true, CancellationToken ct = default);
+    //Task<T?> GetByIdAsync(TKey id, Func<IQueryable<T>, IQueryable<T>>? includes = null, bool asNoTracking = true, CancellationToken ct = default);
     Task<TProjection?> GetByIdAsync<TProjection>(TKey id, Expression<Func<T, TProjection>> selector, bool asNoTracking = true, CancellationToken ct = default );
     //Task<T?> GetAsync(Expression<Func<T, bool>> predicate, Func<IQueryable<T>, IQueryable<T>>? includes = null, bool asNoTracking = true, CancellationToken ct = default);
     Task<TProjection?> GetAsync<TProjection>(Expression<Func<T, bool>> predicate, Expression<Func<T, TProjection>> selector, bool asNoTracking = true, CancellationToken ct = default);
@@ -32,6 +34,7 @@ public interface IReadRepository<T, TKey> where T : class, IEntity<TKey>
         int? take = null, 
         bool asNoTracking = true,
         CancellationToken ct = default);
+    
     Task<Paginated<T>> GetPaginatedAsync(
         int pageIndex, 
         int pageSize, 

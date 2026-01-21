@@ -26,6 +26,9 @@ public class ProductConfiguration : IEntityTypeConfiguration<Product>
             .HasMaxLength(255)
             .IsRequired();
 
+        builder.HasIndex(p => p.Name)
+            .IsUnique();
+
         builder.Property(p => p.Price)
             .HasPrecision(18, 2)
             .IsRequired();

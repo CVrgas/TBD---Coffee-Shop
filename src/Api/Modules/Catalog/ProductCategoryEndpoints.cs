@@ -1,8 +1,11 @@
 using Api.Middlewares;
 using Application.Catalog.Dtos;
+using Application.Catalog.Interfaces;
 using Application.Catalog.Services;
+using Application.Common.Abstractions.Envelope;
 using Application.Common.Abstractions.Persistence;
 using Application.Common.Abstractions.Persistence.Paginated;
+using Infrastructure.Persistence.Abstractions;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Api.Modules.Catalog;
@@ -22,22 +25,25 @@ public static class ProductCategoryEndpoints
         var group = endpoints.MapGroup("/product/category")
             .WithTags("ProductCategory");
 
-        group.MapGet("/", async (string? query, SortOption? sort, int? take, IProductCategoryService svc) =>
-            await svc.GetAllAsync(query, sort, take));
+        group.MapGet("/", async ([AsParameters] PaginatedRequest req, ICategoryQueryService svc) =>
+            Envelope<Paginated<ProductCategoryDto>>.Ok(await svc.GetAllAsync(req)))
+            .AddEndpointFilter(new ValidationFilter<PaginatedRequest>());
 
         group.MapPost("/", async ([FromBody] ProductCategoryCreateDto req, IProductCategoryService svc) =>
             await svc.AddAsync(req))
             .AddEndpointFilter(new ValidationFilter<ProductCategoryCreateDto>());
         
-        group.MapGet("/{id:int}", async (int id, IProductCategoryService svc) =>
-            await svc.GetByIdAsync(id));
+        group.MapGet("/{id:int}", async (int id, ICategoryQueryService svc) =>
+        {
+            var category = await svc.GetByIdAsync(id);
+            return category == null ? Envelope<ProductCategoryDto>.NotFound() : Envelope<ProductCategoryDto>.Ok(category);
+        });
         
-        group.MapGet("/{slug}", async (string slug, IProductCategoryService svc) =>
-            await svc.GetBySlugAsync(slug));
-        
-        group.MapGet("/{slug}/products", async ([FromRoute] string slug, [AsParameters] PaginatedRequest req, IProductService pService) =>
-            await pService.GetPaginatedByCategoryAsync(slug, req))
-            .AddEndpointFilter(new ValidationFilter<PaginatedRequest>());
+        group.MapGet("/{slug}", async (string slug, ICategoryQueryService svc) =>
+        {
+            var category = await svc.GetBySlugAsync(slug);
+            return category == null ? Envelope<ProductCategoryDto>.NotFound() : Envelope<ProductCategoryDto>.Ok(category);
+        });
         
         return endpoints;
     }
