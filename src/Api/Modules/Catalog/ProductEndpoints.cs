@@ -1,11 +1,10 @@
 using Api.Middlewares;
 using Application.Catalog.Dtos;
-using Application.Catalog.Services;
+using Application.Catalog.Interfaces;
 using Application.Common.Abstractions.Envelope;
-using Domain.User;
+using Application.Common.Abstractions.Persistence.Paginated;
 using Infrastructure.Caching;
 using Infrastructure.Integration;
-using Microsoft.AspNetCore.Mvc;
 
 namespace Api.Modules.Catalog;
 
@@ -24,31 +23,29 @@ public static class ProductEndpoints
         var group = endpoints.MapGroup("/products")
             .WithTags("Products");
         
-        group.MapGet("/", async ([AsParameters] ProductQuery req, IProductService svc) =>
-            await svc.GetAllAsync(req.Query, req.SortOption, req.Take))
-            .CacheOutput(CachePolicies.Catalog)
-            .WithSummary("Get all products")
-            .WithDescription("Return a list of all products.");
-        
-        group.MapGet("paginated", async ([AsParameters] ProductPaginatedQuery req, IProductService svc) =>
-            await svc.GetPaginatedAsync(req))
+        group.MapGet("/", async ([AsParameters] PaginatedRequest req, IProductQueryService service) =>
+            {
+                var result = await service.PaginatedAsync(req.ClampIndex, req.ClampSize);
+                return Results.Ok(result);
+            })
             .CacheOutput(CachePolicies.Catalog)
             .WithSummary("Get all products paginated");
 
-        group.MapGet("{id:int}", async (int id, IProductService svc) =>
-            await svc.GetProductByIdAsync(id))
+        group.MapGet("{id:int}", async (int id, IProductQueryService service) =>
+            {
+                var result = await service.GetByIdAsync(id);
+                return result is null ? Envelope<ProductDto>.NotFound() : Envelope<ProductDto>.Ok(result);
+            })
             .CacheOutput(CachePolicies.Catalog)
             .WithSummary("Get product by its ID");
         
-        group.MapGet("{Sku}", async (string sku, IProductService svc) => 
-            await svc.GetProductBySkuAsync(sku))
+        group.MapGet("{sku}", async (string sku, IProductQueryService service) =>
+            {
+                var result = await service.GetBySkuAsync(sku);
+                return result is null ? Envelope<ProductDto>.NotFound() : Envelope<ProductDto>.Ok(result);
+            })
             .CacheOutput(CachePolicies.Catalog)
             .WithSummary("Get product by Sku");
-
-        group.MapGet("filters", async (IProductService svc) => 
-            await svc.GetFilters())
-            .CacheOutput(CachePolicies.Catalog)
-            .WithSummary("List of products valid filters");
 
         #region Admin
         
