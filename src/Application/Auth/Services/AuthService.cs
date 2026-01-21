@@ -2,13 +2,14 @@ using System.ComponentModel.DataAnnotations.Schema;
 using System.Diagnostics;
 using System.Linq.Expressions;
 using Application.Auth.Dtos;
+using Application.Auth.Interfaces;
 using Application.Common.Abstractions.Envelope;
 using Application.Common.Abstractions.Persistence;
 using Application.Common.Abstractions.Persistence.Repository;
 using Application.Common.Interfaces;
+using Application.Common.Interfaces.Security;
 using Application.Common.Interfaces.User;
 using Domain.User;
-using Microsoft.AspNetCore.Identity;
 
 namespace Application.Auth.Services;
 
@@ -23,7 +24,7 @@ public sealed class UserMeDto
 };
 
 public class AuthService(
-    IPasswordHasher<User> hasher, 
+    IPasswordManager hasher, 
     IRepository<User, int> repository, 
     IJwtTokenGenerator generator,
     ICurrentUserService userContext,
@@ -59,8 +60,8 @@ public class AuthService(
         var userExist = user is not null;
         user ??= new User { PasswordHash = _dummyPassword};
         
-        var result = hasher.VerifyHashedPassword(user, user.PasswordHash, request.Password);
-        if (!userExist || result == PasswordVerificationResult.Failed)
+        var passwordVerified = hasher.VerifyPassword(user, user.PasswordHash, request.Password);
+        if (!userExist || !passwordVerified)
         {
             await ApplySecurityDelay(watch.ElapsedMilliseconds, ct);
             return Envelope<AuthResult>.Unauthorized("Invalid credentials");

@@ -1,7 +1,7 @@
 using Application.Common.Abstractions.Envelope;
 using Application.Inventory.Dtos;
 
-namespace Application.Inventory.Services;
+namespace Application.Inventory.Interfaces;
 
 public interface IInventoryService
 {
