@@ -1,4 +1,5 @@
 using Application.Catalog.Dtos;
+using Application.Catalog.Interfaces;
 using Application.Catalog.Services;
 using Application.Catalog.Validators;
 using FluentValidation;

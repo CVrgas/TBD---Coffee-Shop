@@ -1,7 +1,6 @@
 using Api.Middlewares;
 using Application.Auth.Dtos;
-using Application.Auth.Services;
-using Application.Common.Abstractions.Envelope;
+using Application.Auth.Interfaces;
 using RegisterRequest = Application.Auth.Dtos.RegisterRequest;
 
 namespace Api.Modules.Auth;

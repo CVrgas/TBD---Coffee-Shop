@@ -1,8 +1,6 @@
 using Api.Middlewares;
-using Application.Common.Abstractions.Envelope;
 using Application.Inventory.Dtos;
-using Application.Inventory.Services;
-using Domain.User;
+using Application.Inventory.Interfaces;
 using Infrastructure.Integration;
 using Microsoft.AspNetCore.Mvc;
 

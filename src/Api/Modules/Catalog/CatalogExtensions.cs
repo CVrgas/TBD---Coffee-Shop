@@ -1,12 +1,8 @@
 using Application.Catalog.Dtos;
+using Application.Catalog.Interfaces;
 using Application.Catalog.Services;
 using Application.Catalog.Validators;
-using Application.Common.Abstractions.Envelope;
-using Asp.Versioning.ApiExplorer;
 using FluentValidation;
-using Microsoft.Extensions.Options;
-using Microsoft.OpenApi.Models;
-using Swashbuckle.AspNetCore.SwaggerGen;
 
 namespace Api.Modules.Catalog;
 
