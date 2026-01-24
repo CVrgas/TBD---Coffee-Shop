@@ -6,22 +6,20 @@ using Infrastructure.Authentication;
 using Infrastructure.Persistence;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Identity;
-using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Logging;
 using Microsoft.IdentityModel.Tokens;
 using OpenTelemetry.Resources;
 using OpenTelemetry.Trace;
 using Serilog;
-using Serilog.Enrichers.Span;
-using System.Threading.RateLimiting;
+using Application.Common.Interfaces.Security;
 using Application.Common.Interfaces.User;
 using Infrastructure.Caching;
 using Infrastructure.Idempotency;
 using Infrastructure.Identity;
 using Infrastructure.Integration;
+using Infrastructure.Security;
 using Polly;
 using Polly.Retry;
 using StackExchange.Redis;
@@ -30,7 +28,7 @@ namespace Infrastructure;
 
 public static class DependencyInjection
 {
-    public static IServiceCollection AddInfrastructure(this IServiceCollection services, IConfiguration config)
+    public static IServiceCollection AddInfrastructure(this IServiceCollection services, IConfiguration config) 
     {
         services.AddDbContext<MyDbContext>(opt =>
             opt.UseSqlServer(config.GetConnectionString("DefaultConnection"), sqlOptions =>
@@ -96,6 +94,7 @@ public static class DependencyInjection
         services.AddScoped(typeof(IPasswordHasher<>), typeof(PasswordHasher<>));
         services.AddScoped<IUnitOfWork, UnitOfWork>();
         services.AddScoped<IIdempotencyProvider, RedisIdempotencyProvider>();
+        services.AddScoped<IPasswordManager, IdentityPasswordManager>();
         
         services.Configure<JwtSettings>(config.GetSection("JwtSettings"));
         services.AddAuthentication(options =>

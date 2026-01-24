@@ -17,11 +17,8 @@ namespace Application.Catalog.Services;
 public sealed class ProductService(
     IRepository<Product, int> repository, 
     IRepository<ProductCategory, int> categoryRepo,
-    IUnitOfWork uOw, 
-    ResiliencePipelineProvider<string> pipeline) : IProductService
+    IUnitOfWork uOw) : IProductService
 {
-    private readonly ResiliencePipeline _pipeline = pipeline.GetPipeline("default-retry-pipeline");
-
     #region Add Product
     
     public async Task<Envelope<ProductDto>> AddAsync(ProductCreateDto product, CancellationToken ct = default)
@@ -55,6 +52,7 @@ public sealed class ProductService(
             };
 
             await repository.Create(entity);
+            await uOw.SaveChangesAsync(ct);
             return Envelope<ProductDto>.Ok(entity.ToDto() with { CategoryName = category.Name });
         }, ct);
     }
