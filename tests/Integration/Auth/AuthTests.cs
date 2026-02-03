@@ -21,7 +21,7 @@ public class AuthTests(IntegrationTestFactory factory) : BaseIntegrationTest(fac
     {
         return await ExecuteInScopeAsync(async services =>
         {
-            var context = services.GetRequiredService<MyDbContext>();
+            var context = services.GetRequiredService<ApplicationDbContext>();
             var hasher = services.GetRequiredService<IPasswordHasher<User>>();
             var uniqueEmail = $"user{Guid.NewGuid()}@mail.com";
 

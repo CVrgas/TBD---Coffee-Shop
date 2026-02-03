@@ -7,7 +7,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Infrastructure.Persistence;
 
-public class Repository<T, TKey>(MyDbContext dbContext) : RepositoryBase<T, TKey>(dbContext), IRepository<T, TKey>
+public class Repository<T, TKey>(ApplicationDbContext dbContext) : RepositoryBase<T, TKey>(dbContext), IRepository<T, TKey>
     where T : class, IEntity<TKey>
 {
 

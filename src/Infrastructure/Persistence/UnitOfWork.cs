@@ -3,7 +3,7 @@ using Application.Common.Abstractions.Persistence;
 using Microsoft.EntityFrameworkCore;
 namespace Infrastructure.Persistence;
 
-public class UnitOfWork(MyDbContext dbContext) : IUnitOfWork
+public class UnitOfWork(ApplicationDbContext dbContext) : IUnitOfWork
 {
     public async Task<int> SaveChangesAsync(CancellationToken ct = default)
     {

@@ -5,9 +5,9 @@ using Application.Common.Abstractions.Persistence;
 using Domain.Catalog;
 using Microsoft.EntityFrameworkCore;
 
-namespace Infrastructure.Persistence.Abstractions;
+namespace Infrastructure.Persistence.Queries;
 
-public class ProductQueryService(MyDbContext dbContext) : IProductQueryService
+public class ProductQueryService(ApplicationDbContext dbContext) : IProductQueryService
 {
     private readonly IQueryable<Product> _query = dbContext.Products.AsNoTracking();
     private readonly IQueryable<ProductCategory> _queryCategory = dbContext.ProductCategories.AsNoTracking();

@@ -30,7 +30,7 @@ public class OrderIdempotencyTests(IntegrationTestFactory factory) : BaseIntegra
         return await ExecuteInScopeAsync(async services =>
         {
             // Context
-            var context = services.GetRequiredService<MyDbContext>();
+            var context = services.GetRequiredService<ApplicationDbContext>();
             var hasher = services.GetRequiredService<IPasswordHasher<User>>();
             var uniqueEmail = $"user{Guid.NewGuid()}@mail.com";
             
@@ -119,7 +119,7 @@ public class OrderIdempotencyTests(IntegrationTestFactory factory) : BaseIntegra
 
         await ExecuteInScopeAsync(async services =>
         {
-            var context = services.GetRequiredService<MyDbContext>();
+            var context = services.GetRequiredService<ApplicationDbContext>();
             var orderCount = await context.Orders.CountAsync();
 
             Assert.Equal(1, orderCount);
@@ -181,7 +181,7 @@ public class OrderIdempotencyTests(IntegrationTestFactory factory) : BaseIntegra
 
         await ExecuteInScopeAsync(async services =>
         {
-            var context = services.GetRequiredService<MyDbContext>();
+            var context = services.GetRequiredService<ApplicationDbContext>();
             var records = await context.PaymentRecords
                 .Where(pr => pr.IntentId == createPayment!.Data.IntentId)
                 .ToListAsync();

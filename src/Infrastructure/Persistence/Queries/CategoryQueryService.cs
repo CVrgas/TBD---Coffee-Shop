@@ -9,7 +9,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Infrastructure.Persistence.Queries;
 
-public class CategoryQueryService(MyDbContext context) : ICategoryQueryService
+public class CategoryQueryService(ApplicationDbContext context) : ICategoryQueryService
 {
     private readonly IQueryable<ProductCategory> _query = context.ProductCategories.AsNoTracking();
     

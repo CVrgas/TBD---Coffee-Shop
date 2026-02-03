@@ -27,7 +27,7 @@ public class OrderConcurrencyTests(IntegrationTestFactory factory) : BaseIntegra
     {
         return await ExecuteInScopeAsync(async services =>
         {
-            var context = services.GetRequiredService<MyDbContext>();
+            var context = services.GetRequiredService<ApplicationDbContext>();
             var hasher = services.GetRequiredService<IPasswordHasher<User>>();
             var user = new User
             {
@@ -123,7 +123,7 @@ public class OrderConcurrencyTests(IntegrationTestFactory factory) : BaseIntegra
 
         await ExecuteInScopeAsync(async services =>
         {
-            var context = services.GetRequiredService<MyDbContext>();
+            var context = services.GetRequiredService<ApplicationDbContext>();
             var stockItem = await context.StockItems.FirstAsync(si => si.ProductId == productId);
 
             Assert.Equal(0, stockItem.QuantityOnHand);

@@ -32,7 +32,7 @@ public class OrderTests(IntegrationTestFactory factory) : BaseIntegrationTest(fa
         return await ExecuteInScopeAsync(async services =>
         {
             // Context
-            var context = services.GetRequiredService<MyDbContext>();
+            var context = services.GetRequiredService<ApplicationDbContext>();
             var hasher = services.GetRequiredService<IPasswordHasher<User>>();
             var uniqueEmail = $"user{Guid.NewGuid()}@mail.com";
             
@@ -107,7 +107,7 @@ public class OrderTests(IntegrationTestFactory factory) : BaseIntegrationTest(fa
         
         await ExecuteInScopeAsync(async services =>
         {
-            var context = services.GetRequiredService<MyDbContext>();
+            var context = services.GetRequiredService<ApplicationDbContext>();
 
             var dbOrder = await context.Orders
                 .Include(o => o.OrderItems)
@@ -166,7 +166,7 @@ public class OrderTests(IntegrationTestFactory factory) : BaseIntegrationTest(fa
         
         await ExecuteInScopeAsync(async services =>
         {
-            var context = services.GetRequiredService<MyDbContext>();
+            var context = services.GetRequiredService<ApplicationDbContext>();
             var dbOrder = await context.Orders.FirstOrDefaultAsync(o => o.UserId == seed.UserId);
             Assert.Null(dbOrder);
         });
@@ -211,13 +211,13 @@ public class OrderTests(IntegrationTestFactory factory) : BaseIntegrationTest(fa
         await Client.PostAsJsonAsync("/api/v1/order/add", order);
         
         var orderNumber = await ExecuteInScopeAsync(async service => {
-            return await service.GetRequiredService<MyDbContext>()
+            return await service.GetRequiredService<ApplicationDbContext>()
                 .Orders.Where(o => o.UserId == seed.UserId)
                 .Select(o => o.OrderNumber).FirstOrDefaultAsync();
         });
 
         await ExecuteInScopeAsync(async service => {
-            var context = service.GetRequiredService<MyDbContext>();
+            var context = service.GetRequiredService<ApplicationDbContext>();
             var stockItems = await context.StockItems
                 .Where(si => si.ProductId == seed.ProductId)
                 .ToListAsync();
@@ -236,7 +236,7 @@ public class OrderTests(IntegrationTestFactory factory) : BaseIntegrationTest(fa
         // ASSERT
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
         await ExecuteInScopeAsync(async service => {
-            var context = service.GetRequiredService<MyDbContext>();
+            var context = service.GetRequiredService<ApplicationDbContext>();
             
             var dbOrder = context.Orders.FirstOrDefault(o => o.OrderNumber == orderNumber);
             Assert.NotNull(dbOrder);

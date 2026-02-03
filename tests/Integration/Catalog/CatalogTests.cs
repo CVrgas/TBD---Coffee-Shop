@@ -34,7 +34,7 @@ public class CatalogTests(IntegrationTestFactory factory) : BaseIntegrationTest(
     {
         return await ExecuteInScopeAsync(async services =>
         {
-            var context = services.GetRequiredService<MyDbContext>();
+            var context = services.GetRequiredService<ApplicationDbContext>();
             var hasher = services.GetRequiredService<IPasswordHasher<User>>();
             var uniqueEmail = $"user{Guid.NewGuid()}@mail.com";
             
@@ -102,7 +102,7 @@ public class CatalogTests(IntegrationTestFactory factory) : BaseIntegrationTest(
 
         await ExecuteInScopeAsync(async services =>
         {
-            var context = services.GetRequiredService<MyDbContext>();
+            var context = services.GetRequiredService<ApplicationDbContext>();
             var createdProduct =
                 await context.Products.FirstOrDefaultAsync(p => result != null && p.Id == result.Data.Id);
 
@@ -163,7 +163,7 @@ public class CatalogTests(IntegrationTestFactory factory) : BaseIntegrationTest(
         
         var product = await ExecuteInScopeAsync(async services =>
         {
-            var context = services.GetRequiredService<MyDbContext>();
+            var context = services.GetRequiredService<ApplicationDbContext>();
             
             var product = new Product
             {
@@ -188,7 +188,7 @@ public class CatalogTests(IntegrationTestFactory factory) : BaseIntegrationTest(
 
         await ExecuteInScopeAsync(async services =>
         {
-            var context = services.GetRequiredService<MyDbContext>();
+            var context = services.GetRequiredService<ApplicationDbContext>();
             var p = await context.Products.FindAsync(product.Id);
             p!.Name = "UPDATED_NAME_IN_DB";
             await context.SaveChangesAsync();
@@ -205,7 +205,7 @@ public class CatalogTests(IntegrationTestFactory factory) : BaseIntegrationTest(
         // Arrange
         var currentVersion = await ExecuteInScopeAsync(async sp =>
         {
-            var context = sp.GetRequiredService<MyDbContext>();
+            var context = sp.GetRequiredService<ApplicationDbContext>();
             return await context.Products
                 .AsNoTracking()
                 .Where(p => p.Id == product.Id)

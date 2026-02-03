@@ -45,7 +45,7 @@ public class OrderAtomicFailureTests(IntegrationTestFactory factory) : BaseInteg
     private async Task<SeedResult> Seed(int stockQuantity = 100)
     {
         return await ExecuteInScopeAsync(async services => {
-            var context = services.GetRequiredService<MyDbContext>();
+            var context = services.GetRequiredService<ApplicationDbContext>();
             var hasher = services.GetRequiredService<IPasswordHasher<User>>();
             
             var user = new User {
@@ -96,7 +96,7 @@ public class OrderAtomicFailureTests(IntegrationTestFactory factory) : BaseInteg
         {
             builder.ConfigureServices(services =>
             {
-                services.AddDbContext<MyDbContext>((sp, opts) => opts.AddInterceptors(new DatabaseSaboteurInterceptor()));
+                services.AddDbContext<ApplicationDbContext>((sp, opts) => opts.AddInterceptors(new DatabaseSaboteurInterceptor()));
             });
         });
 
@@ -118,7 +118,7 @@ public class OrderAtomicFailureTests(IntegrationTestFactory factory) : BaseInteg
 
         await ExecuteInScopeAsync(async services =>
         {
-            var context = services.GetRequiredService<MyDbContext>();
+            var context = services.GetRequiredService<ApplicationDbContext>();
             
             var stockItem = await context.StockItems
                 .AsNoTracking()

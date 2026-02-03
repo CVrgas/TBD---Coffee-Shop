@@ -8,13 +8,13 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Infrastructure.Persistence;
 
-public partial class MyDbContext : DbContext
+public partial class ApplicationDbContext : DbContext
 {
-    public MyDbContext()
+    public ApplicationDbContext()
     {
     }
 
-    public MyDbContext(DbContextOptions<MyDbContext> options) : base(options) { }
+    public ApplicationDbContext(DbContextOptions<ApplicationDbContext> options) : base(options) { }
 
     public virtual DbSet<Product> Products { get; set; }
     public virtual DbSet<ProductCategory> ProductCategories { get; set; }

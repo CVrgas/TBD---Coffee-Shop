@@ -30,7 +30,7 @@ public static class DependencyInjection
 {
     public static IServiceCollection AddInfrastructure(this IServiceCollection services, IConfiguration config) 
     {
-        services.AddDbContext<MyDbContext>(opt =>
+        services.AddDbContext<ApplicationDbContext>(opt =>
             opt.UseSqlServer(config.GetConnectionString("DefaultConnection"), sqlOptions =>
             {
                 sqlOptions.EnableRetryOnFailure(
