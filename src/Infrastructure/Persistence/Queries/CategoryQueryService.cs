@@ -43,8 +43,7 @@ public class CategoryQueryService(ApplicationDbContext context) : ICategoryQuery
         
         var totalCount = await querable.CountAsync(ct);
         
-        var skip =  (pagination.ClampIndex - 1) * pagination.ClampSize;
-        querable = querable.Skip(skip).Take(pagination.PageSize);
+        querable = querable.Skip(pagination.Skip).Take(pagination.PageSize);
 
         var categories = await querable.Select(_getCategorySelector).ToListAsync(cancellationToken: ct);
         return new Paginated<ProductCategoryDto>(Entities: categories, TotalCount: totalCount, PageNumber: pagination.PageIndex, PageSize: pagination.PageSize);

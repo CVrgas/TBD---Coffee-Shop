@@ -25,7 +25,7 @@ public static class ProductEndpoints
         
         group.MapGet("/", async ([AsParameters] PaginatedRequest req, IProductQueryService service) =>
             {
-                var result = await service.PaginatedAsync(req.ClampIndex, req.ClampSize);
+                var result = await service.PaginatedAsync(request: req);
                 return Results.Ok(result);
             })
             .CacheOutput(CachePolicies.Catalog)

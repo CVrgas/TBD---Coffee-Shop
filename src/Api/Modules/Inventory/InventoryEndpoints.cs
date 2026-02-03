@@ -22,11 +22,12 @@ public static class InventoryEndpoints
             .RequireAuthorization(AuthPolicyName.ElevatedRights)
             .WithTags("Inventory");
 
-        group.MapGet("/product/{id:int}", async (int id, IInventoryService service) => await service.GetStockItemsAsync(id))
+        group.MapGet("/product/{id:int}", async (int id, IInventoryService service) => 
+                await service.GetStockItemsAsync(id))
             .WithSummary("Get Stock Item");
 
-        group.MapPost("/adjust",
-                async (IInventoryService service, [FromBody] AdjustStockDto dto) => await service.AdjustStock(dto))
+        group.MapPost("/adjust", async (AdjustStockDto dto, IInventoryService service) => 
+                await service.AdjustStock(dto))
             .AddEndpointFilter(new ValidationFilter<AdjustStockDto>())
             .WithSummary("Stock Movement");
         

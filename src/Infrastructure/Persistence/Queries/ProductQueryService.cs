@@ -2,6 +2,7 @@ using System.Linq.Expressions;
 using Application.Catalog.Dtos;
 using Application.Catalog.Interfaces;
 using Application.Common.Abstractions.Persistence;
+using Application.Common.Abstractions.Persistence.Paginated;
 using Domain.Catalog;
 using Microsoft.EntityFrameworkCore;
 
@@ -46,17 +47,21 @@ public class ProductQueryService(ApplicationDbContext dbContext) : IProductQuery
         
         return new Paginated<ProductDto>(products, totalCount, pageNumber, pageSize);
     }
-    public async Task<Paginated<ProductDto>> PaginatedAsync(int pageNumber, int pageSize, CancellationToken cancellationToken = default)
+    public async Task<Paginated<ProductDto>> PaginatedAsync(PaginatedRequest request, CancellationToken cancellationToken = default)
     {
-        var totalCount = await _query.CountAsync(cancellationToken);
+        var querable = _query
+            .Where(c =>
+                string.IsNullOrWhiteSpace(request.QueryPattern) || c.Name.Contains(request.QueryPattern) &&
+                !request.OnlyActive || c.IsActive)
+            .ApplySort(request.SortOption);
         
-        var skip = (pageNumber - 1) * pageSize;
+        var totalCount = await querable.CountAsync(cancellationToken);
         
-        var products = await _query.Skip(skip).Take(pageSize)
-            .Select(_getProductSelector)
-            .ToListAsync(cancellationToken);
+        querable = querable.Skip(request.Skip).Take(request.PageSize);
         
-        return new Paginated<ProductDto>(products, totalCount, pageNumber, pageSize);
+        var products = await querable.Select(_getProductSelector).ToListAsync(cancellationToken);
+        
+        return new Paginated<ProductDto>(products, totalCount, request.PageIndex, request.PageSize);
     }
     
     private readonly Expression<Func<Product, ProductDto>> _getProductSelector = p => new ProductDto
