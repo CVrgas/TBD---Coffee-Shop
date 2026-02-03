@@ -13,9 +13,10 @@ public abstract record PaginatedRequestBase : SortOptionsBase
         : null;
     
     public int PageIndex { get; set; } = 1;
-    public int ClampIndex => Math.Clamp(PageIndex, MinPageIndex, int.MaxValue);
+    private int ClampIndex => Math.Clamp(PageIndex, MinPageIndex, int.MaxValue);
+    public int Skip => (ClampIndex - 1) * ClampSize;
     public int PageSize { get; set; } = 10;
-    public int ClampSize => Math.Clamp(PageSize, MinPageSize, MaxPageSize);
+    private int ClampSize => Math.Clamp(PageSize, MinPageSize, MaxPageSize);
     public bool OnlyActive { get; set; } = true;
 };
 
