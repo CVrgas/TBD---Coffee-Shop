@@ -19,6 +19,7 @@ using Infrastructure.Caching;
 using Infrastructure.Idempotency;
 using Infrastructure.Identity;
 using Infrastructure.Integration;
+using Infrastructure.Persistence.Seeding;
 using Infrastructure.Security;
 using Polly;
 using Polly.Retry;
@@ -95,6 +96,8 @@ public static class DependencyInjection
         services.AddScoped<IUnitOfWork, UnitOfWork>();
         services.AddScoped<IIdempotencyProvider, RedisIdempotencyProvider>();
         services.AddScoped<IPasswordManager, IdentityPasswordManager>();
+        
+        services.AddScoped<IDataSeeder, DataSeeder>();
         
         services.Configure<JwtSettings>(config.GetSection("JwtSettings"));
         services.AddAuthentication(options =>
