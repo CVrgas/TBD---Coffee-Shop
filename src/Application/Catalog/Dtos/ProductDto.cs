@@ -20,4 +20,10 @@ public sealed record ProductDto
     public int? CategoryId { get; init; }
     public string? CategoryName { get; set; }
     public byte[] RowVersion { get; set; } = null!;
+    public int QuantityInStock { get; private set; }
+    public void SetQuantityInStock(int quantity)
+    {
+        ArgumentOutOfRangeException.ThrowIfNegativeOrZero(quantity);
+        QuantityInStock = quantity;
+    }
 }
