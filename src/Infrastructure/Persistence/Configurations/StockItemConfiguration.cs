@@ -11,32 +11,27 @@ public class StockItemConfiguration : IEntityTypeConfiguration<StockItem>
         builder.HasKey(si => si.Id);
             
         builder.Property(si => si.ProductId)
-            .IsRequired(); 
+            .IsRequired();
+        
+        builder.Property(si => si.LocationId)
+            .IsRequired();
             
         builder.Property(si => si.QuantityOnHand)
-            .HasPrecision(18, 2)
             .IsRequired();
-            
-        builder.Property(si => si.ReorderLevel)
-            .HasPrecision(18, 2)
-            .IsRequired();
-            
-        builder.Property(si => si.ReservedQuantity)
-            .HasPrecision(18, 2);
-            
+
+        builder.HasMany(si => si.Movements)
+            .WithOne(m => m.StockItem)
+            .HasForeignKey(sm => sm.StockItemId)
+            .OnDelete(DeleteBehavior.Cascade);
+        
+        builder.Metadata.FindNavigation(nameof(StockItem.Movements))!
+            .SetPropertyAccessMode(PropertyAccessMode.Field);
+        
         builder.Property(si => si.IsActive)
             .HasDefaultValue(true);
             
         builder.Property(si => si.RowVersion)
             .IsRowVersion();
-            
-        builder.Property(si => si.LastMovementAt)
-            .IsRequired();
-            
-        builder.HasOne(si => si.Product)
-            .WithMany(p => p.StockItems)
-            .HasForeignKey(si => si.ProductId)
-            .OnDelete(DeleteBehavior.Restrict);
             
         builder.HasIndex(si => new { si.ProductId, si.LocationId})
             .IsUnique();
