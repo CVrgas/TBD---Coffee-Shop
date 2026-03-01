@@ -1,5 +1,4 @@
 using System.Linq.Expressions;
-using Application.Common.Abstractions.Persistence;
 
 namespace Application.Common.Interfaces;
 
@@ -39,7 +38,6 @@ public abstract class Specification<T>(Expression<Func<T, bool>> criteria) : ISp
     
     protected void ApplyOrderBy(Expression<Func<T, object>> orderByExpression) => OrderBy = orderByExpression;
     protected void ApplyOrderByDescending(Expression<Func<T, object>> orderByDescExpression) => OrderByDescending = orderByDescExpression;
-
     protected void ApplyCriteria(Expression<Func<T, bool>> criteria) => Criteria = criteria;
     
     #endregion

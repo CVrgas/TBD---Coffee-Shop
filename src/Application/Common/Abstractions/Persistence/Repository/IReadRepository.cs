@@ -12,6 +12,5 @@ public interface IReadRepository<T, TKey> where T : class, IEntity<TKey>
     Task<IEnumerable<T>> ListAsync(ISpecification<T> spec, bool asNoTracking = true, CancellationToken ct = default);
     Task<int> CountAsync(ISpecification<T> spec, bool asNoTracking = true, CancellationToken ct = default);
     Task<Paginated<T>> PaginatedAsync(ISpecification<T> spec, CancellationToken ct = default);
-    Task<bool> ExistsAsync(Expression<Func<T, bool>> predicate, bool asNoTracking = true, CancellationToken ct = default);
     Task<bool> ExistsAsync(ISpecification<T> specification, bool asNoTracking = true, CancellationToken ct = default);
 }

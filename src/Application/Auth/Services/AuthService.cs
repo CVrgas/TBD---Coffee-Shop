@@ -56,7 +56,7 @@ public class AuthService(
     public async Task<Envelope<AuthResult>> LoginAsync(LoginRequest request, CancellationToken ct = default)
     {
         var watch = Stopwatch.StartNew();
-        var user = await repository.GetAsync(new UserLoginSpec(request.Email), ct: ct);
+        var user = await repository.GetAsync(new ExistEmailSpec(request.Email), ct: ct);
         var userExist = user is not null;
         user ??= new User { PasswordHash = _dummyPassword};
         
@@ -99,9 +99,10 @@ public class AuthService(
         var delay = targetTime - (int)time;
         if (delay > 0) await Task.Delay(delay, ct);
     }
+    
     private async Task<bool> EmailExistAsync(string email, CancellationToken ct = default) =>
-        await repository.ExistsAsync(u => email == u.Email, ct: ct);
+        await repository.ExistsAsync(new ExistEmailSpec(email), ct: ct);
 }
 
 public class UserMeSpec(int id): Specification<User>(u => u.Id == id);
-public class UserLoginSpec(string email): Specification<User>(u => u.IsActive && email == u.Email);
+public class ExistEmailSpec(string email): Specification<User>(u => u.IsActive && email == u.Email);
