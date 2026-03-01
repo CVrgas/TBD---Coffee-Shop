@@ -2,7 +2,7 @@ using Application.Common.Abstractions.Persistence;
 
 namespace Application.Common;
 
-public abstract record SortOptionsBase
+public abstract class SortOptionsBase
 {
     public string? Sort { get; init; } = null;
     
