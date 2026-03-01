@@ -31,8 +31,7 @@ public class OrderService(
         
         return await uOw.ExecuteInTransactionAsync(async _ =>
         {
-            var products =
-                await productRepository.ListAsync(p => productIds.Contains(p.Id), asNoTracking: false, ct: ct);
+            var products = await productRepository.ListAsync(new ProductByIds(productIds), asNoTracking: false, ct: ct);
 
             var listedResult = products.ToDictionary(p => p.Id);
             var missingProduct = productIds.Except(listedResult.Keys).ToList();
@@ -40,7 +39,7 @@ public class OrderService(
             if(missingProduct.Count != 0) 
                 return Envelope<string>.NotFound($"Product with ID {missingProduct.First()} not found.");
             
-            var newOrder = new Order(CurrentUserId, order.Currency, TaxPercentage);
+            var newOrder = Order.Create(CurrentUserId, order.Currency, TaxPercentage);
             var stockMovement = new Dictionary<int, int>();
             
             foreach (var item in order.Items)
@@ -64,18 +63,6 @@ public class OrderService(
             return Envelope<string>.Ok(newOrder.OrderNumber);
         }, ct);
     }
-
-    public async Task<Envelope<IEnumerable<OrderDto>>> GetOrdersAsync(int? userId, CancellationToken ct = default)
-    {
-        Expression<Func<Order, bool>> predicate = order => 
-            order.UserId == CurrentUserId 
-            && order.Status != OrderStatus.Unspecified; // Return user's orders
-        
-        if (UserRole is UserRole.Admin or UserRole.Staff && userId.HasValue) predicate = o => o.UserId == userId; // if admin or staff and has userId, returns user order.
-
-        var orders = await repository.ListAsync(selector: _getOrderProjection, predicate: predicate, ct: ct);
-        return Envelope<IEnumerable<OrderDto>>.Ok(orders);
-    }
     
     public async Task<Envelope> CancelOrderAsync(string orderNumber, CancellationToken ct = default)
     {
@@ -91,22 +78,7 @@ public class OrderService(
             return Envelope.Ok();
         }, ct);
     }
-
-    #region Helpers
-
-    private readonly Expression<Func<Order, OrderDto>> _getOrderProjection = o => new OrderDto(
-        o.OrderNumber,
-        o.Status.ToString(),
-        o.Subtotal,
-        o.Tax,
-        o.Total,
-        o.Currency.Code,
-        o.CreatedAt,
-        o.UpdatedAt,
-        o.OrderItems.Select( oi => new OrderItemDto(oi.ProductId, oi.Qty)).ToList()
-        );
-
-    #endregion
 }
 
+internal class ProductByIds(IEnumerable<int> productIds) : Specification<Product>(p => productIds.Contains(p.Id));
 internal class GetOrderCancelSpec(string orderNumber) : Specification<Order>(order => order.OrderNumber == orderNumber && order.Status == OrderStatus.Pending);

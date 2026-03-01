@@ -7,7 +7,6 @@ namespace Application.Orders.Services;
 public interface IOrderService
 {
     Task<Envelope<string>> AddOrderAsync(OrderCreationDto order, CancellationToken ct = default);
-    Task<Envelope<IEnumerable<OrderDto>>> GetOrdersAsync(int? userId, CancellationToken ct = default);
     Task<Envelope> CancelOrderAsync(string orderNumber, CancellationToken ct = default);
     
 }

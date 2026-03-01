@@ -6,13 +6,13 @@ using Application.Common;
 using Application.Common.Abstractions.Envelope;
 using Application.Common.Abstractions.Persistence;
 using Application.Common.Abstractions.Persistence.Repository;
-using Domain.Base;
+using Application.Common.Interfaces;
 using Domain.Catalog;
-using Domain.Inventory;
-using Polly;
-using Polly.Registry;
 
 namespace Application.Catalog.Services;
+
+internal class ProductNameSpec(string name, int? productId = null) : Specification<Product>(p => p.Name == name && (productId == null || p.Id == productId));
+internal class CategoriesByIdsSpec(IEnumerable<int> ids) : Specification<ProductCategory>(c => ids.Contains(c.Id));
 
 public sealed class ProductService(
     IRepository<Product, int> repository, 
@@ -25,31 +25,26 @@ public sealed class ProductService(
     {
         return await uOw.ExecuteInTransactionAsync(async (_) =>
         {
-            var exist = await repository.ExistsAsync(p => p.Name == product.Name, ct: ct);
+            var exist = await repository.ExistsAsync(new ProductNameSpec(product.Name), ct: ct);
             if (exist)
                 return Envelope<ProductDto>.BadRequest()
                     .WithError(nameof(product.Name), "Product name already exists");
 
-            var category = await categoryRepo.GetByIdAsync(
-                id: product.CategoryId,
-                selector: pc => new { pc.Code, pc.Name },
-                ct: ct);
+            var category = await categoryRepo.GetByIdAsync(id: product.CategoryId, ct: ct);
 
             if (category is null)
                 return Envelope<ProductDto>.BadRequest("Category does not exist")
                     .WithError(nameof(product.CategoryId), "Category does not exist");
 
-            var entity = new Product
-            {
-                Name = product.Name,
-                Sku = $"{Utilities.GenerateSku(category.Code)}",
-                Price = product.Price,
-                Currency = new CurrencyCode(product.Currency),
-                Description = product.Description,
-                ImageUrl = product.ImageUrl,
-                CategoryId = product.CategoryId,
-                StockItems = new List<StockItem> { new() { IsActive = true } }
-            };
+            var entity = Product.Create(
+                name: product.Name,
+                sku: $"{Utilities.GenerateSku(category.Code)}",
+                price: product.Price,
+                currencyCode: product.Currency,
+                description: product.Description,
+                imageUrl: product.ImageUrl,
+                categoryId: product.CategoryId
+            );
 
             await repository.Create(entity);
             await uOw.SaveChangesAsync(ct);
@@ -62,22 +57,20 @@ public sealed class ProductService(
         return await uOw.ExecuteInTransactionAsync(async _ =>
         {
             var incomingIds = dtos.Select(p => p.CategoryId).ToHashSet();
-            var existingCategories = 
-                (await categoryRepo.ListAsync(
-                    selector: c => new {c.Id, c.Code}, 
-                    predicate: pc => incomingIds.Contains(pc.Id), 
-                    ct: ct)).ToDictionary(c => c.Id, c => c.Code);
+            var existingCategories = await categoryRepo.ListAsync(new CategoriesByIdsSpec(incomingIds), ct: ct);
             
-            var missingIds = incomingIds.Where(id => !existingCategories.ContainsKey(id)).ToList();
+            var categoryDictionary = existingCategories.ToDictionary(c=> c.Id, c=> c.Name);
+            
+            var missingIds = incomingIds.Where(id => !categoryDictionary.ContainsKey(id)).ToList();
             if (missingIds.Count != 0) 
                 return Envelope.BadRequest()
                     .WithError("Categories", $"Missing categories: {string.Join(", ", missingIds)}");
             
             var products = new List<Product>();
-
+            
             foreach (var dto in dtos)
             {
-                var sku = Utilities.GenerateSku(existingCategories[dto.CategoryId]);
+                var sku = Utilities.GenerateSku(categoryDictionary[dto.CategoryId]);
                 products.Add(dto.ToEntity(sku));
             }
         
@@ -100,21 +93,17 @@ public sealed class ProductService(
             
             if (!string.IsNullOrWhiteSpace(dto.Name))
             {
-                var exist = await repository.ExistsAsync(p => 
-                    p.Id != dto.ProductId && dto.Name != null && p.Name == dto.Name, ct: ct);
+                var exist = await repository.ExistsAsync(new ProductNameSpec(dto.Name, dto.ProductId), ct: ct);
                 if(exist) return Envelope<ProductDto>.BadRequest().WithError(nameof(product.Name),"Name already exists.");
             }
             
             if (dto.CategoryId.HasValue)
             {
-                var categoryExist = await categoryRepo.ExistsAsync(c => c.Id == dto.CategoryId, ct: ct);
+                var categoryExist = await categoryRepo.ExistsAsync(new CategoriesByIdsSpec([dto.CategoryId.Value]), ct: ct);
                 if(!categoryExist) return Envelope<ProductDto>.NotFound("Category does not exist.");
             }
             
-            if(dto.Name is not null) product.Name = dto.Name;
-            if(dto.Description is not null) product.Description = dto.Description;
-            if(dto.CategoryId is not null) product.CategoryId = (int)dto.CategoryId;
-            if(dto.Name is not null || dto.Description is not null || dto.CategoryId is not null) product.UpdatedAt = DateTimeOffset.UtcNow;
+            product.UpdateDetails(dto.Name, dto.Description, dto.CategoryId);
             
             return Envelope<ProductDto>.Ok(product.ToDto());
         }, ct: ct);
@@ -126,8 +115,7 @@ public sealed class ProductService(
             var product = await repository.GetByIdAsync(productId, asNoTracking: false, ct: ct);
             if (product is null) return Envelope.NotFound("Product not found.");
 
-            product.RatingSum += rate;
-            product.RatingCount++;
+            product.AddRating(rate);
             
             return Envelope.Ok();
         }, ct);
@@ -138,13 +126,13 @@ public sealed class ProductService(
     {
         return await uOw.ExecuteInTransactionAsync(async _ =>
         {
-            if (productId < 0)
+            if (productId <= 0)
                 return Envelope.BadRequest().WithError("product id", "Invalid product id, need to be positive.");
 
             var product = await repository.GetByIdAsync(productId, asNoTracking: false, ct: ct);
             if (product is null) return Envelope.NotFound("Product not found.");
 
-            product.IsActive = state ?? !product.IsActive;
+            product.ToggleStatus(state);
             return Envelope.Ok();
         }, ct);
 
@@ -156,13 +144,9 @@ public sealed class ProductService(
             var product = await repository.GetByIdAsync(updatePrice.Id, asNoTracking:false, ct: ct);
             if (product is null) 
                 return Envelope.NotFound("Product not found.");
-            
-            if(updatePrice.Price <= 0)
-                return Envelope.BadRequest().WithError(nameof(updatePrice.Price), "Price must be positive.");
         
-            product.Price = updatePrice.Price;
-            product.Currency = updatePrice.FormatCurrency;
-            product.RowVersion = updatePrice.RowVersion;
+            product.UpdatePrice(updatePrice.Price, updatePrice.FormatCurrency);
+            product.RowVersion = updatePrice.RowVersion; // TODO
             return Envelope.Ok();
         }, ct);
     }
@@ -175,8 +159,8 @@ public sealed class ProductService(
 
             if (string.IsNullOrWhiteSpace(imageUrl))
                 return Envelope.BadRequest().WithError(nameof(imageUrl), "Invalid image url.");
-
-            product.ImageUrl = imageUrl;
+            
+            //product.ImageUrl = imageUrl; TODO
             return Envelope.Ok();
         }, ct);
 
