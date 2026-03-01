@@ -1,7 +1,7 @@
-using System.Security.Claims;
 using Api.Common.Idempotency;
 using Api.Middlewares;
 using Application.Common.Abstractions.Envelope;
+using Application.Common.Abstractions.Persistence;
 using Application.Orders.Dtos;
 using Application.Orders.Services;
 using Microsoft.AspNetCore.Mvc;
@@ -24,10 +24,13 @@ public static class OrderEndpoints
             .MapGroup("/order")
             .RequireAuthorization()
             .WithTags("Order");
-        
-        group.MapGet("/all", async ([FromQuery]int? userId,  IOrderService service) => 
-                await service.GetOrdersAsync(userId))
-            .WithSummary("Get Order");
+
+        group.MapGet("/paginated", async ([AsParameters] OrderPaginatedRequest request, IOrderQueries service) =>
+            {
+                var page = await service.PaginatedAsync(request);
+                return Envelope<Paginated<OrderDto>>.Ok(page);
+            })
+    .WithSummary("Get Order");
         
         group.MapPost("/add", async ([FromBody] OrderCreationDto order, IOrderService service) => 
                 await service.AddOrderAsync(order))

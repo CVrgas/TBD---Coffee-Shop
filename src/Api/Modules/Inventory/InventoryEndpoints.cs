@@ -2,7 +2,6 @@ using Api.Middlewares;
 using Application.Inventory.Dtos;
 using Application.Inventory.Interfaces;
 using Infrastructure.Integration;
-using Microsoft.AspNetCore.Mvc;
 
 namespace Api.Modules.Inventory;
 
@@ -21,10 +20,6 @@ public static class InventoryEndpoints
         var group = endpoints.MapGroup("/inventory")
             .RequireAuthorization(AuthPolicyName.ElevatedRights)
             .WithTags("Inventory");
-
-        group.MapGet("/product/{id:int}", async (int id, IInventoryService service) => 
-                await service.GetStockItemsAsync(id))
-            .WithSummary("Get Stock Item");
 
         group.MapPost("/adjust", async (AdjustStockDto dto, IInventoryService service) => 
                 await service.AdjustStock(dto))

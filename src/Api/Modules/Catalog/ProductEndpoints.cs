@@ -1,10 +1,11 @@
-using Api.Middlewares;
 using Application.Catalog.Dtos;
 using Application.Catalog.Interfaces;
 using Application.Common.Abstractions.Envelope;
+using Application.Common.Abstractions.Persistence;
 using Application.Common.Abstractions.Persistence.Paginated;
+using Application.Inventory.Dtos;
 using Infrastructure.Caching;
-using Infrastructure.Integration;
+using Infrastructure.Persistence.Configurations;
 
 namespace Api.Modules.Catalog;
 
@@ -26,7 +27,7 @@ public static class ProductEndpoints
         group.MapGet("/", async ([AsParameters] PaginatedRequest req, IProductQueryService service) =>
             {
                 var result = await service.PaginatedAsync(request: req);
-                return Results.Ok(result);
+                return Envelope<Paginated<ProductDto>>.Ok(result);
             })
             .CacheOutput(CachePolicies.Catalog)
             .WithSummary("Get all products paginated");
@@ -46,61 +47,13 @@ public static class ProductEndpoints
             })
             .CacheOutput(CachePolicies.Catalog)
             .WithSummary("Get product by Sku");
-
-        #region Admin
         
-        group.MapPost("/", async (ProductCreateDto dto, IProductService svc) =>
-                await svc.AddAsync(dto))
-            .RequireAuthorization(AuthPolicyName.Admin)
-            .InvalidateCacheTag(CachePolicies.Catalog)
-            .AddEndpointFilter(new ValidationFilter<ProductCreateDto>())
-            .WithSummary("Create a new product");
-
-        group.MapPut("/", async (ProductUpdateDto dto, IProductService svc) =>
-                await svc.UpdateAsync(dto))
-            .RequireAuthorization(AuthPolicyName.Admin)
-            .InvalidateCacheTag(CachePolicies.Catalog)
-            .AddEndpointFilter(new ValidationFilter<ProductUpdateDto>())
-            .WithSummary("Update a product");
-
-        group.MapDelete("{id:int}", async (int id, IProductService svc) =>
-                await svc.DeactiveProduct(id))
-            .RequireAuthorization(AuthPolicyName.Admin)
-            .InvalidateCacheTag(CachePolicies.Catalog)
-            .WithSummary("Delete product");
-        
-        group.MapPatch("{id:int}/status", async (int id, IProductService svc) =>
-                await svc.ToggleStatus(id))
-            .RequireAuthorization(AuthPolicyName.Admin)
-            .InvalidateCacheTag(CachePolicies.Catalog)
-            .WithSummary("toggle a product status");
-        
-        group.MapPatch("{id:int}/price", async (int id, ProductUpdatePrice dto, IProductService svc, CancellationToken ct) => 
-                await svc.UpdatePrice(dto with { Id = id }, ct))
-            .RequireAuthorization(AuthPolicyName.Admin)
-            .InvalidateCacheTag(CachePolicies.Catalog)
-            .WithSummary("Update product price")
-            .WithDescription("Updates only the price (and currency) of a product by ID. Supports optimistic concurrency.")
-            .Produces<Envelope<ProductDto>>(StatusCodes.Status200OK)
-            .Produces<Envelope>(StatusCodes.Status404NotFound)
-            .Produces<Envelope>(StatusCodes.Status409Conflict);
-
-        group.MapPost("{id:int}/images", async (int id, string imageUrl, IProductService svc) => 
-                await svc.UpdateImageAsync(id, imageUrl))
-            .RequireAuthorization(AuthPolicyName.Admin)
-            .InvalidateCacheTag(CachePolicies.Catalog)
-            .WithSummary("Update product image");
-        
-        group.MapPost("bulk", async (List<ProductCreateDto> dtos, IProductService svc) =>
-                await svc.BulkCreateAsync(dtos))
-            .RequireAuthorization(AuthPolicyName.Admin)
-            .InvalidateCacheTag(CachePolicies.Catalog)
-            .AddEndpointFilter(new ValidationFilter<List<ProductCreateDto>>())
-            .WithSummary("Bulk products");
-        
-        group.MapGet("{id:int}/history", (int id, IProductService svc) => { throw new NotImplementedException(); });
-
-        #endregion
+        group.MapGet("list/{id:int}", async (int id, ICatalogQueries service) =>
+            {
+                var list = await service.GetStockItemsAsync(id);
+                return Envelope<List<StockItemDto>>.Ok(list);
+            })
+            .WithSummary("Get Stock Item");
 
         return endpoints;
     }
