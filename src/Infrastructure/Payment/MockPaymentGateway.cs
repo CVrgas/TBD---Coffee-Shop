@@ -4,8 +4,6 @@ namespace Infrastructure.Payment;
 
 public class MockPaymentGateway : IPaymentGateway
 {
-    private readonly Random _random = new();
-
     private enum IntentState
     {
         Success, // Success 
@@ -34,7 +32,7 @@ public class MockPaymentGateway : IPaymentGateway
 
         if (!isSuccess)
         {
-            errorMessage = _dict.TryGetValue(intentProps[1], out var value) ? value : "Unknown error.";
+            errorMessage = _dict.GetValueOrDefault(intentProps[1], "Unknown error.");
         }
         
         await Task.Delay(1000, ct);
@@ -44,10 +42,10 @@ public class MockPaymentGateway : IPaymentGateway
     private string GetMockIntent(decimal amount)
     {
         var prefix = "pi_";
-        var suffix = _random.Next(0, 9999).ToString("0000");
+        var suffix = Random.Shared.Next(0, 9999).ToString("0000");
         
         if (amount >= 1000) prefix += nameof(IntentState.Insufficient);
-        else if (amount - Math.Floor(amount) == 0.99m) prefix += nameof(IntentState.Fraud);
+        else if (amount % 1 == 0.99m) prefix += nameof(IntentState.Fraud);
         else prefix += nameof(IntentState.Success);
         
         return string.Concat(prefix, "_mock_" ,suffix);
