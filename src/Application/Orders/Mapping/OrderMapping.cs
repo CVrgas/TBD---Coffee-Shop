@@ -1,23 +1,22 @@
 using Application.Orders.Dtos;
-using Domain.Base;
-using Domain.Catalog;
 using Domain.Orders;
 
 namespace Application.Orders.Mapping;
 
 public static class OrderMapping
 {
-    public static OrderDto ToDto(this Order o)
+    public static OrderDto ToDto(this Order o, IEnumerable<OrderItemDto>? items = null)
     {
         return new OrderDto(
-            o.OrderNumber, 
-            o.Status.ToString(), 
-            o.Subtotal, 
-            o.Tax, 
-            o.Total, 
-            o.Currency.Code,
-            o.CreatedAt,
-            o.UpdatedAt,
-            o.OrderItems.Select(oi => new OrderItemDto(oi.ProductId, oi.Qty)).ToList());
+            OrderNumber: o.OrderNumber,
+            Status: o.Status.ToString(),
+            Subtotal: o.Subtotal,
+            Tax: o.Tax,
+            Total: o.Total,
+            Currency: o.Currency.Code,
+            CreatedAt: o.CreatedAt.UtcDateTime,
+            UpdatedAt: o.UpdatedAt.UtcDateTime,
+            OrderItems: items ?? new List<OrderItemDto>()
+        );
     }
 }

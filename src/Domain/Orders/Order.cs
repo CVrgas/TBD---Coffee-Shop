@@ -3,7 +3,7 @@ using Domain.Catalog;
 
 namespace Domain.Orders;
 
-public class Order : Entity<int>, IHasRowVersion
+public class Order : EntityWithRowVersion<int>
 {
     private Order(){}
     
@@ -20,17 +20,6 @@ public class Order : Entity<int>, IHasRowVersion
         };
     }
     
-    // public Order(int userId, CurrencyCode currency, decimal taxPercentage, List<OrderItem>? orderItems = null)
-    // {
-    //     UserId = userId;
-    //     Currency = currency;
-    //     Status = OrderStatus.Pending;
-    //     TaxPercentage = taxPercentage;
-    //     CreatedAt = DateTime.UtcNow;
-    //     _orderItems = orderItems ?? [];
-    //     OrderNumber = $"{DateTime.UtcNow.Year}-{Guid.NewGuid().ToString()[..8].ToUpper()}";
-    // }
-    
     public string OrderNumber { get; private set; } = null!;
     public int UserId { get; private set; }
     public OrderStatus Status { get; private set; }
@@ -39,13 +28,10 @@ public class Order : Entity<int>, IHasRowVersion
     public decimal TaxPercentage { get; private set; }
     public decimal Total { get; private set; }
     public CurrencyCode Currency { get; private set; }
-    public DateTime CreatedAt { get; private set; } = DateTime.UtcNow;
-    public DateTime UpdatedAt { get; private set; }
-    public byte[] RowVersion { get; private set; } = null!;
-    public User.User User { get; private set; } = null!;
+    public DateTimeOffset CreatedAt { get; private set; } = DateTime.UtcNow;
+    public DateTimeOffset UpdatedAt { get; private set; }
     private readonly List<OrderItem> _orderItems = [];
     public IReadOnlyCollection<OrderItem> OrderItems => _orderItems.AsReadOnly();
-    public IEnumerable<PaymentRecord> PaymentRecords { get; private set; } = new List<PaymentRecord>();
     public void AddItem(Product product, int quantity)
     {
         if(Status != OrderStatus.Pending)

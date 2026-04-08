@@ -2,14 +2,15 @@ using System.Net;
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using Application.Common;
+using Application.Orders.Commands.CreateOrder;
 using Application.Orders.Dtos;
 using Domain.Base;
 using Domain.Catalog;
+using Domain.Inventory;
 using Domain.User;
 using Infrastructure.Persistence;
 using Integration.Common;
 using Microsoft.AspNetCore.Identity;
-using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Diagnostics;
 using Microsoft.Extensions.DependencyInjection;
@@ -48,38 +49,41 @@ public class OrderAtomicFailureTests(IntegrationTestFactory factory) : BaseInteg
             var context = services.GetRequiredService<ApplicationDbContext>();
             var hasher = services.GetRequiredService<IPasswordHasher<User>>();
             
-            var user = new User {
-                Email = $"race_{Guid.NewGuid()}@test.com",
-                FirstName = "Race", LastName = "User",
-                PasswordHash = "strongPassword123",
-                Role = UserRole.Customer,
-                SecurityStamp = Guid.NewGuid().ToString()
-            };
-            user.PasswordHash = hasher.HashPassword(user, user.PasswordHash);
-
-            var category = new ProductCategory
-            {
-                Name = "failCat", Code = "FC", Slug = "fc-" + Guid.NewGuid()
-            };
-            
-            var uniqueName = $"Coffee_{Guid.NewGuid()}";
-            var product = new Product {
-                Name = uniqueName,
-                Sku = Utilities.GenerateSku(category.Code),
-                Price = 10,
-                Currency = new CurrencyCode("USD"),
-                Category = category,
-                StockItems = new List<Domain.Inventory.StockItem> { new() { IsActive = true } }
-            };
-            
-            product.StockItems.First(si => si.IsActive).AdjustQuantity(stockQuantity);
-
+            var user = User.CreateCustomer(
+                email: $"race_{Guid.NewGuid()}@test.com",
+                firstName: "Race", 
+                lastName: "User"
+                );
+            user.SetPassword(hasher.HashPassword(user, user.PasswordHash));
             context.Users.Add(user);
+            await context.SaveChangesAsync();
+
+            var category = ProductCategory.Create(
+                name: "failCat",
+                code: "FC",
+                slug: "fc-" + Guid.NewGuid()
+            );
             context.ProductCategories.Add(category);
-            context.Products.Add(product);
             await context.SaveChangesAsync();
             
-            return new SeedResult(user.Id, product.Id, category.Id, product.StockItems.First().Id);
+            var uniqueName = $"Coffee_{Guid.NewGuid()}";
+            var product = Product.Create(
+                name: uniqueName,
+                sku: Utilities.GenerateSku(category.Code),
+                price: 10,
+                currencyCode: "USD", 
+                categoryId: category.Id
+            );
+            context.Products.Add(product);
+            await context.SaveChangesAsync();
+
+            var stockItem = StockItem.Initialize(product.Id);
+            stockItem.ReceiveStock(stockQuantity);
+            
+            context.StockItems.Add(stockItem);
+            await context.SaveChangesAsync();
+            
+            return new SeedResult(user.Id, product.Id, category.Id, stockItem.Id);
         });
     }
 
@@ -110,8 +114,8 @@ public class OrderAtomicFailureTests(IntegrationTestFactory factory) : BaseInteg
         sabotagedClient.DefaultRequestHeaders.Add("X-Idempotency-key", idempotencyKey);
         
         // Act
-        var orderRequest = new OrderCreationDto("USD", new List<OrderItemDto> { new(seed.ProductId, orderQuantity) });
-        var response = await sabotagedClient.PostAsJsonAsync("/api/v1/order/add", orderRequest);
+        var orderRequest = new CreateOrderCommand("USD", new List<OrderItemDto> { new(seed.ProductId, orderQuantity) });
+        var response = await sabotagedClient.PostAsJsonAsync("/api/v1/orders", orderRequest);
         
         // Assert
         Assert.Equal(HttpStatusCode.InternalServerError, response.StatusCode);
@@ -122,13 +126,14 @@ public class OrderAtomicFailureTests(IntegrationTestFactory factory) : BaseInteg
             
             var stockItem = await context.StockItems
                 .AsNoTracking()
-                .Include(si => si.StockMovements)
+                .Include(si => si.Movements)
                 .FirstAsync(si => si.Id == seed.StockItemId);
             
             Assert.Equal(initialStock, stockItem.QuantityOnHand);
             Assert.Equal(0, stockItem.ReservedQuantity);
             
-            Assert.Empty(stockItem.StockMovements);
+            // Verify items were not reserved
+            Assert.DoesNotContain(stockItem.Movements, s => s.Id == seed.StockItemId && s.Reason == StockMovementReason.Reserve);
             
             var orderExists = await context.Orders.AnyAsync(o => o.UserId == seed.UserId);
             Assert.False(orderExists);

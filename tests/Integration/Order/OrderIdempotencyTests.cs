@@ -1,10 +1,12 @@
 using System.Net;
 using System.Net.Http.Json;
-using Api.Modules.Payment;
 using Application.Common;
 using Application.Common.Abstractions.Envelope;
 using Application.Common.Interfaces.Payment;
+using Application.Orders.Commands.CreateOrder;
 using Application.Orders.Dtos;
+using Application.Payments.Commands.ConfirmPayment;
+using Application.Payments.Commands.CreatePaymentIntent;
 using Domain.Base;
 using Domain.Catalog;
 using Domain.Inventory;
@@ -35,46 +37,55 @@ public class OrderIdempotencyTests(IntegrationTestFactory factory) : BaseIntegra
             var uniqueEmail = $"user{Guid.NewGuid()}@mail.com";
             
             // user
-            var user = new User {
-                FirstName = "user", 
-                LastName = "generic",
-                Email = uniqueEmail,
-                PasswordHash = "genericPassword123",
-                Role = userRole,
-                CreatedAt = DateTime.UtcNow,
-                SecurityStamp = Guid.NewGuid().ToString(),
-            };
-            user.PasswordHash = hasher.HashPassword(user, user.PasswordHash);
+            var user = userRole == UserRole.Customer
+                ? User.CreateCustomer(
+                    email: uniqueEmail,
+                    firstName: "user",
+                    lastName: "generic"
+                )
+                : User.CreateStaff(
+                    email: uniqueEmail,
+                    firstName: "user",
+                    lastName: "generic",
+                    role: userRole
+                );
+            user.SetPassword(hasher.HashPassword(user, user.PasswordHash));
+            context.Users.Add(user);
+            await context.SaveChangesAsync();
             
             // product category
-            var category = new ProductCategory {
-                Name = "Coffee",
-                Slug = ("coffee-" + Guid.NewGuid()).Slugify(),
-                Code = "Coffee".ToUpperInvariant().Replace(" ", ""),
-                Description = "whole coffee",
-            };
+            var category = ProductCategory.Create(
+                name: "Coffee",
+                slug: ("coffee-" + Guid.NewGuid()).Slugify(),
+                code: "Coffee".ToUpperInvariant().Replace(" ", ""),
+                description: "whole coffee"
+            );
+            
+            context.ProductCategories.Add(category);
+            await context.SaveChangesAsync();
 
             // product
             var uniqueName = $"Coffee_{Guid.NewGuid()}";
-            var product = new Product {
-                Name = uniqueName,
-                Sku = Utilities.GenerateSku(category.Code),
-                Price = price,
-                Currency = new CurrencyCode("USD"),
-                Description = "best colombian coffee",
-                Category = category,
-                StockItems = new List<StockItem>{new() { IsActive = true, }},
-            };
+            var product = Product.Create(
+                name: uniqueName,
+                sku: Utilities.GenerateSku(category.Code),
+                price: price,
+                currencyCode: "USD",
+                description: "best colombian coffee",
+                categoryId: category.Id
+            );
             
-            // add quantity on stock.
-            product.StockItems.First(si => si.IsActive).AdjustQuantity(stockQuantity);
-
-            context.Users.Add(user);
-            context.ProductCategories.Add(category);
             context.Products.Add(product);
             await context.SaveChangesAsync();
             
-            return new SeededIds(user.Id, product.Id, category.Id, product.StockItems.First(si => si.IsActive).Id);
+            // add quantity on stock.
+            var stockItem = StockItem.Initialize(product.Id);
+            stockItem.ReceiveStock(stockQuantity);
+            
+            context.StockItems.Add(stockItem);
+            await context.SaveChangesAsync();
+            
+            return new SeededIds(user.Id, product.Id, category.Id, stockItem.Id);
         });
     }
     
@@ -93,14 +104,14 @@ public class OrderIdempotencyTests(IntegrationTestFactory factory) : BaseIntegra
         using var barrier = new Barrier(totalRequest);
         var tasks = new List<Task<HttpResponseMessage>>();
 
-        var request = new OrderCreationDto("USD", new List<OrderItemDto> { new(seed.ProductId, 1) });
+        var request = new CreateOrderCommand("USD", new List<OrderItemDto> { new(seed.ProductId, 1) });
         
         for (var i = 0; i < totalRequest; i++)
         {
             tasks.Add(Task.Run(async () =>
             {
                 barrier.SignalAndWait();
-                return await PostWithIdempotencyAsync("api/v1/order/add", request, idempotencyKey);
+                return await PostWithIdempotencyAsync("/api/v1/orders", request, idempotencyKey);
             }));
         }
 
@@ -141,16 +152,16 @@ public class OrderIdempotencyTests(IntegrationTestFactory factory) : BaseIntegra
         var seed = await Seed();
         SetUserContext(seed.UserId, UserRole.Customer);
         
-        var orderRequest = new OrderCreationDto("USD", new List<OrderItemDto> { new(seed.ProductId, 1) });
-        var orderResponse = await PostWithIdempotencyAsync("api/v1/order/add", orderRequest, Guid.NewGuid().ToString());
+        var orderRequest = new CreateOrderCommand("USD", new List<OrderItemDto> { new(seed.ProductId, 1) });
+        var orderResponse = await PostWithIdempotencyAsync("/api/v1/orders", orderRequest, Guid.NewGuid().ToString());
         Assert.Equal(HttpStatusCode.OK, orderResponse.StatusCode);
         
         var result = await orderResponse.Content.ReadFromJsonAsync<Envelope<string>>();
         Assert.NotNull(result?.Data);
         var orderNumber = result!.Data;
         
-        var createPaymentRequest = new PayCreateRequest(orderNumber!);
-        var createPaymentResponse = await Client.PostAsJsonAsync("api/v1/payment/create", createPaymentRequest);
+        var createPaymentRequest = new CreatePaymentIntentCommand(orderNumber!);
+        var createPaymentResponse = await PostWithIdempotencyAsync("api/v1/payment/create", createPaymentRequest, Guid.NewGuid().ToString());
         Assert.Equal(HttpStatusCode.OK, createPaymentResponse.StatusCode);
         
         var createPayment = await createPaymentResponse.Content.ReadFromJsonAsync<Envelope<PaymentConfirmationResult>>();
@@ -162,7 +173,7 @@ public class OrderIdempotencyTests(IntegrationTestFactory factory) : BaseIntegra
         var idempotencyKey = Guid.NewGuid().ToString();
         for (var i = 0; i < totalRequest; i++)
         {
-            var request = new PayConfirmationRequest(createPayment.Data.IntentId, orderNumber);
+            var request = new ConfirmPaymentCommand(createPayment.Data.IntentId);
             tasks.Add(Task.Run(async () =>
             {
                 barrier.SignalAndWait();

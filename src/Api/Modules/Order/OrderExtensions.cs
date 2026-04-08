@@ -1,8 +1,9 @@
-using Application.Inventory.Services;
+using Application.Orders.Commands.CreateOrder;
 using Application.Orders.Dtos;
-using Application.Orders.Services;
+using Application.Orders.Interfaces;
 using Application.Orders.Validators;
 using FluentValidation;
+using Infrastructure.Persistence.Abstractions;
 
 namespace Api.Modules.Order;
 
@@ -18,9 +19,8 @@ public static class OrderExtensions
     /// <returns>The service collection with order services added.</returns>
     public static IServiceCollection AddOrder(this IServiceCollection services)
     {
-        services.AddScoped<IOrderService, OrderService>();
-        
-        services.AddScoped<IValidator<OrderCreationDto>,  OrderCreationValidator>();
+        services.AddScoped<IOrderQueries, OrderQueries>();
+        services.AddScoped<IValidator<CreateOrderCommand>,  OrderCreationValidator>();
         services.AddScoped<IValidator<OrderItemDto>,  OrderItemValidator>();
         
         return services;

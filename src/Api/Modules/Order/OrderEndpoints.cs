@@ -1,9 +1,10 @@
 using Api.Common.Idempotency;
 using Api.Middlewares;
-using Application.Common.Abstractions.Envelope;
-using Application.Common.Abstractions.Persistence;
-using Application.Orders.Dtos;
-using Application.Orders.Services;
+using Application.Orders.Commands.CancelOrder;
+using Application.Orders.Commands.CreateOrder;
+using Application.Orders.Commands.GetOrderById;
+using Application.Orders.Commands.GetPaginatedOrder;
+using MediatR;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Api.Modules.Order;
@@ -21,25 +22,26 @@ public static class OrderEndpoints
     public static IEndpointRouteBuilder MapOrder(this IEndpointRouteBuilder endpoints)
     {
         var group = endpoints
-            .MapGroup("/order")
+            .MapGroup("/orders")
             .RequireAuthorization()
-            .WithTags("Order");
+            .WithTags("Orders");
 
-        group.MapGet("/paginated", async ([AsParameters] OrderPaginatedRequest request, IOrderQueries service) =>
-            {
-                var page = await service.PaginatedAsync(request);
-                return Envelope<Paginated<OrderDto>>.Ok(page);
-            })
-    .WithSummary("Get Order");
+        group.MapGet("/", async ([AsParameters] GetPaginatedOrderCommand request, [FromServices] ISender sender, CancellationToken cancellationToken = default) => 
+                await sender.Send(request, cancellationToken))
+            .WithSummary("Get Order");
         
-        group.MapPost("/add", async ([FromBody] OrderCreationDto order, IOrderService service) => 
-                await service.AddOrderAsync(order))
-            .AddEndpointFilter(new ValidationFilter<OrderCreationDto>())
+        group.MapPost("/", async ([FromBody] CreateOrderCommand request, [FromServices] ISender sender, CancellationToken cancellationToken = default) => 
+            await sender.Send(request, cancellationToken))
+            .AddEndpointFilter(new ValidationFilter<CreateOrderCommand>())
             .AddEndpointFilter(new IdempotentEndpointFilter())
-            .WithSummary("Create a Order");
+            .WithSummary("Create a new order and reserve stock synchronously");
+        
+        group.MapGet("/{orderNumber}", async (string orderNumber, int orderId,[FromServices] ISender sender, CancellationToken cancellationToken = default) => 
+            await sender.Send(new GetOrderByNumberCommand(orderNumber), cancellationToken))
+            .WithSummary("Get Order");
 
-        group.MapPost("/cancel", async ([FromBody] string orderNumber, IOrderService service) => 
-                await service.CancelOrderAsync(orderNumber))
+        group.MapPost("/{orderNumber}/cancel", async (string orderNumber, [FromServices] ISender sender, CancellationToken cancellationToken = default) => 
+                await sender.Send(new CancelOrderCommand(OrderNumber: orderNumber), cancellationToken))
             .WithSummary("Cancel a Order");
         
         return endpoints;

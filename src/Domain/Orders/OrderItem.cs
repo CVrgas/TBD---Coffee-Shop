@@ -12,7 +12,7 @@ public class OrderItem : Entity<int>
         ProductId = product.Id;
         NameSnapshot = product.Name;
         UnitPrice = product.Price;
-        Qty = quantity;
+        Quantity = quantity;
         CalculateLineTotal();
     }
     
@@ -20,18 +20,17 @@ public class OrderItem : Entity<int>
     public int ProductId { get; private set;} 
     public string NameSnapshot { get; private set;} = null!;
     public decimal UnitPrice { get; private set;}
-    public int Qty { get; private set;} 
+    public int Quantity { get; private set;} 
     public decimal LineTotal { get; private set;}
     public Order Order { get; private set; } = null!;
-    public Product Product { get; private set; } = null!;
 
     internal void AddQuantity(int quantity)
     {
-        Qty += quantity;
+        Quantity += quantity;
         CalculateLineTotal();
     }
     private void CalculateLineTotal()
     {
-        LineTotal = UnitPrice * Qty;
+        LineTotal = UnitPrice * Quantity;
     }
 }
