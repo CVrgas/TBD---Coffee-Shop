@@ -1,4 +1,5 @@
 using System.Text.Json;
+using Application.Common.Abstractions.Envelope;
 using Application.Common.Interfaces;
 
 namespace Api.Common.Idempotency;
@@ -12,7 +13,7 @@ public class IdempotentEndpointFilter(int expiryMinutes = 60) : IEndpointFilter
         var request = context.HttpContext.Request;
         if (!request.Headers.TryGetValue(HeaderName, out var key) || string.IsNullOrWhiteSpace(key))
         {
-            return Application.Common.Abstractions.Envelope.Envelope.BadRequest("Missing X-Idempotency-Key header.");
+            return Envelope.BadRequest("Missing X-Idempotency-Key header.");
         }
 
         var provider = context.HttpContext.RequestServices.GetRequiredService<IIdempotencyProvider>();
@@ -22,8 +23,8 @@ public class IdempotentEndpointFilter(int expiryMinutes = 60) : IEndpointFilter
         {
             var previousResponse = await provider.GetResponseAsync(key!);
             return previousResponse == "PROCESSING"
-                ? Application.Common.Abstractions.Envelope.Envelope.Conflict("Request is already being processed.") 
-                : JsonSerializer.Deserialize<object>(previousResponse!);
+                ? Envelope.Conflict("Request is already being processed.") 
+                : JsonSerializer.Deserialize<Envelope>(previousResponse!);
         }
 
         try
