@@ -32,23 +32,23 @@ public class CatalogQueries(ApplicationDbContext context) : ICatalogQueries
     {
         var queryable = context.Products.AsNoTracking()
             .Where(c =>
-                (!request.OnlyActive || c.IsActive)  &&
+                (!request.OnlyActive.HasValue || request.OnlyActive.Value == c.IsActive)  &&
                 (string.IsNullOrWhiteSpace(request.QueryPattern) || c.Name.Contains(request.QueryPattern)))
             .ApplySort(request.SortOption);
         
         var totalCount = await queryable.CountAsync(cancellationToken);
         
-        queryable = queryable.Skip(request.Skip).Take(request.PageSize);
+        queryable = queryable.Skip(request.Skip).Take(request.PageSize!.Value);
         
         var products = await queryable.Select(_getProductSelector).ToListAsync(cancellationToken);
-        return new Paginated<ProductDto>(products, totalCount, request.PageIndex, request.PageSize);
+        return new Paginated<ProductDto>(products, totalCount, request.PageIndex!.Value, request.PageSize.Value);
     }
 
     public async Task<Paginated<ProductDto>> GetByCategoryAsync(PaginatedRequest request, CancellationToken cancellationToken = default)
     {
         var queryable = context.Products.AsNoTracking()
             .Where(c => 
-                (!request.OnlyActive || c.IsActive) && 
+                (!request.OnlyActive.HasValue || request.OnlyActive.Value == c.IsActive) && 
                 (
                     string.IsNullOrWhiteSpace(request.QueryPattern) || 
                     c.Category == null || 
@@ -58,10 +58,10 @@ public class CatalogQueries(ApplicationDbContext context) : ICatalogQueries
         
         var totalCount = await queryable.CountAsync(cancellationToken);
         
-        queryable = queryable.Skip(request.Skip).Take(request.PageSize);
+        queryable = queryable.Skip(request.Skip).Take(request.PageSize!.Value);
         
         var products = await queryable.Select(_getProductSelector).ToListAsync(cancellationToken);
-        return new Paginated<ProductDto>(products, totalCount, request.PageIndex, request.PageSize);
+        return new Paginated<ProductDto>(products, totalCount, request.PageIndex!.Value, request.PageSize.Value);
     }
     
     public async Task<List<StockItemDto>> GetStockItemsAsync(int productId, CancellationToken ct = default)

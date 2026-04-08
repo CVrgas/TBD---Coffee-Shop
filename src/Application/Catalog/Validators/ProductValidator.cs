@@ -1,10 +1,10 @@
-using Application.Catalog.Dtos;
-using Domain.Catalog;
+using Application.Catalog.Commands.Create;
+using Application.Catalog.Commands.Update;
 using FluentValidation;
 
 namespace Application.Catalog.Validators;
 
-public sealed class ProductValidator  : AbstractValidator<ProductCreateDto>
+public sealed class ProductValidator  : AbstractValidator<CreateProductCommand>
 {
     public ProductValidator()
     {
@@ -31,7 +31,7 @@ public sealed class ProductValidator  : AbstractValidator<ProductCreateDto>
     
 }
 
-public class BulkProductValidator : AbstractValidator<List<ProductCreateDto>>
+public class BulkProductValidator : AbstractValidator<List<CreateProductCommand>>
 {
     public BulkProductValidator()
     {
@@ -43,7 +43,7 @@ public class BulkProductValidator : AbstractValidator<List<ProductCreateDto>>
     }
 }
 
-public sealed class ProductUpdateValidator  : AbstractValidator<ProductUpdateDto>
+public sealed class ProductUpdateValidator  : AbstractValidator<UpdateProductCommand>
 {
     public ProductUpdateValidator()
     {

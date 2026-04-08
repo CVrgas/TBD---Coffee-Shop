@@ -1,11 +1,21 @@
+using Api.Common.Idempotency;
+using Api.Middlewares;
+using Application.Catalog.Commands.Create;
+using Application.Catalog.Commands.Rate;
+using Application.Catalog.Commands.ToggleStatus;
+using Application.Catalog.Commands.Update;
+using Application.Catalog.Commands.UpdatePrice;
 using Application.Catalog.Dtos;
 using Application.Catalog.Interfaces;
 using Application.Common.Abstractions.Envelope;
 using Application.Common.Abstractions.Persistence;
 using Application.Common.Abstractions.Persistence.Paginated;
 using Application.Inventory.Dtos;
+using Domain.User;
 using Infrastructure.Caching;
-using Infrastructure.Persistence.Configurations;
+using Infrastructure.Integration;
+using MediatR;
+using Microsoft.AspNetCore.Mvc;
 
 namespace Api.Modules.Catalog;
 
@@ -31,6 +41,37 @@ public static class ProductEndpoints
             })
             .CacheOutput(CachePolicies.Catalog)
             .WithSummary("Get all products paginated");
+        
+        group.MapPost("/", async ([FromBody] CreateProductCommand request, [FromServices] ISender sender, CancellationToken cancellationToken = default) =>
+            await sender.Send(request, cancellationToken))
+            .RequireAuthorization(AuthPolicyName.Admin)
+            .AddEndpointFilter(new ValidationFilter<CreateProductCommand>())
+            .AddEndpointFilter(new IdempotentEndpointFilter())
+            .WithSummary("Create a new product catalog entry");
+        
+        group.MapPut("/{productId:int}", async (int productId, [FromBody] UpdateProductCommand request, [FromServices] ISender sender, CancellationToken cancellationToken = default) =>
+            {
+                request.SetProductId(productId);
+                return await sender.Send(request, cancellationToken);
+            })
+            .RequireAuthorization()
+            .AddEndpointFilter(new ValidationFilter<UpdateProductCommand>())
+            .WithSummary("Update an existing product's complete details");
+        
+        group.MapPatch("/{productId:int}/price", async (int productId, [FromBody] UpdatePriceCommand request, [FromServices] ISender sender, CancellationToken cancellationToken = default) => 
+            await sender.Send(request, cancellationToken))
+            .RequireAuthorization(AuthPolicyName.Admin)
+            .WithSummary("Modify the price of a specific product");
+        
+        group.MapPatch("/{productId:int}/status", async (int productId, [FromBody] ToggleStatusCommand request, [FromServices] ISender sender, CancellationToken cancellationToken = default) => 
+            await sender.Send(request, cancellationToken))
+            .RequireAuthorization(AuthPolicyName.Admin)
+            .WithSummary("Toggle the active/inactive status of a product");
+        
+        group.MapPost("/{productId:int}/ratings", async (int productId, [FromBody] RateProductCommand request, [FromServices] ISender sender, CancellationToken cancellationToken = default) => 
+            await sender.Send(request, cancellationToken))
+            .RequireAuthorization()
+            .WithSummary("Submit a user rating for a product");
 
         group.MapGet("{id:int}", async (int id, IProductQueryService service) =>
             {

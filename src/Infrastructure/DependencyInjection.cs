@@ -1,3 +1,4 @@
+using Application.Catalog.Interfaces;
 using Application.Common.Abstractions.Persistence;
 using Application.Common.Abstractions.Persistence.Repository;
 using Application.Common.Interfaces;
@@ -15,10 +16,12 @@ using OpenTelemetry.Trace;
 using Serilog;
 using Application.Common.Interfaces.Security;
 using Application.Common.Interfaces.User;
+using Application.Inventory.Abstractions;
 using Infrastructure.Caching;
 using Infrastructure.Idempotency;
 using Infrastructure.Identity;
 using Infrastructure.Integration;
+using Infrastructure.Persistence.Abstractions;
 using Infrastructure.Persistence.Seeding;
 using Infrastructure.Security;
 using Polly;
@@ -96,6 +99,8 @@ public static class DependencyInjection
         services.AddScoped<IUnitOfWork, UnitOfWork>();
         services.AddScoped<IIdempotencyProvider, RedisIdempotencyProvider>();
         services.AddScoped<IPasswordManager, IdentityPasswordManager>();
+        services.AddScoped<IInventoryQueries, InventoryQueries>();
+        services.AddScoped<ICatalogQueries, CatalogQueries>();
         
         services.AddScoped<IDataSeeder, DataSeeder>();
         

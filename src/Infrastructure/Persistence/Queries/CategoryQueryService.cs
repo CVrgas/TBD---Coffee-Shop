@@ -43,10 +43,10 @@ public class CategoryQueryService(ApplicationDbContext context) : ICategoryQuery
         
         var totalCount = await querable.CountAsync(ct);
         
-        querable = querable.Skip(pagination.Skip).Take(pagination.PageSize);
+        querable = querable.Skip(pagination.Skip).Take(pagination.PageSize!.Value);
 
         var categories = await querable.Select(_getCategorySelector).ToListAsync(cancellationToken: ct);
-        return new Paginated<ProductCategoryDto>(Entities: categories, TotalCount: totalCount, PageNumber: pagination.PageIndex, PageSize: pagination.PageSize);
+        return new Paginated<ProductCategoryDto>(Entities: categories, TotalCount: totalCount, PageNumber: pagination.PageIndex!.Value, PageSize: pagination.PageSize.Value);
     }
 
     #region Helpers

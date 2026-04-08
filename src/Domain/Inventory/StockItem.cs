@@ -1,5 +1,4 @@
 using Domain.Base;
-using Domain.Catalog;
 
 namespace Domain.Inventory;
 
@@ -25,7 +24,8 @@ public sealed class StockItem : EntityWithRowVersion<int>
             ProductId = productId, 
             LocationId = locationId,
             QuantityOnHand = 0,
-            ReservedQuantity = 0
+            ReservedQuantity = 0,
+            IsActive = true
         };
     }
 
@@ -36,13 +36,14 @@ public sealed class StockItem : EntityWithRowVersion<int>
         _movements.Add(new StockMovement(quantity, reason, null));
     }
     
-    public void ReserveStock(int quantity)
+    public void ReserveStock(int quantity, string referenceId)
     {
         ArgumentOutOfRangeException.ThrowIfNegativeOrZero(quantity);
         if (AvailableQuantity < quantity) 
             throw new InvalidOperationException($"Insufficient available stock. Available: {AvailableQuantity}, Requested: {quantity}");
         
         ReservedQuantity += quantity;
+        _movements.Add( new StockMovement(quantity, StockMovementReason.Reserve, referenceId));
     }
     public void ConsumeReservedStock(int quantity, string orderId)
     {
@@ -56,10 +57,11 @@ public sealed class StockItem : EntityWithRowVersion<int>
         _movements.Add(new StockMovement(-quantity, StockMovementReason.Sale, orderId));
     }
     
-    public void ReleaseReservation(int quantity)
+    public void ReleaseReservation(int quantity, string referenceId)
     {
         if (ReservedQuantity < quantity) throw new InvalidOperationException("Cannot release more than reserved");
         ReservedQuantity -= quantity;
+        _movements.Add( new StockMovement(quantity, StockMovementReason.Restore, referenceId));
     }
     public void AdjustStock(int delta, StockMovementReason reason = StockMovementReason.Adjustment)
     {

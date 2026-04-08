@@ -1,6 +1,10 @@
-namespace Application.Catalog.Dtos;
+using Application.Catalog.Dtos;
+using Application.Common.Abstractions.Envelope;
+using MediatR;
 
-public class ProductCategoryCreateDto
+namespace Application.Catalog.Commands.CreateCategory;
+
+public sealed record CreateCategoryCommand : IRequest<Envelope<ProductCategoryDto>>
 {
     private string _name = string.Empty;
 
@@ -18,4 +22,4 @@ public class ProductCategoryCreateDto
     } 
     public string? Description { get; set; } 
     public int? ParentId { get; set; }
-};
+}

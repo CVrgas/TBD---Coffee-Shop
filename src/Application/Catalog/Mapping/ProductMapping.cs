@@ -1,3 +1,4 @@
+using Application.Catalog.Commands.Create;
 using Application.Catalog.Dtos;
 using Domain.Base;
 using Domain.Catalog;
@@ -43,7 +44,7 @@ public static class ProductMapping
         );
     }
 
-    public static Product ToEntity(this ProductCreateDto p, string sku)
+    public static Product ToEntity(this CreateProductCommand p, string sku)
     {
         return Product.Create(
             name: p.Name,

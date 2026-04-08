@@ -1,9 +1,10 @@
+using Application.Catalog.Commands.Create;
+using Application.Catalog.Commands.CreateCategory;
+using Application.Catalog.Commands.Update;
 using Application.Catalog.Dtos;
 using Application.Catalog.Interfaces;
-using Application.Catalog.Services;
 using Application.Catalog.Validators;
 using FluentValidation;
-using Infrastructure.Persistence.Abstractions;
 using Infrastructure.Persistence.Queries;
 
 namespace Api.Modules.Catalog;
@@ -20,15 +21,13 @@ public static class CatalogExtensions
     /// <returns>The service collection with catalog services added.</returns>
     public static IServiceCollection AddCatalog(this IServiceCollection services)
     {
-        services.AddScoped<IProductService, ProductService>();
         services.AddScoped<IProductQueryService, ProductQueryService>();
-        services.AddScoped<IValidator<ProductCreateDto>, ProductValidator>();
-        services.AddScoped<IValidator<List<ProductCreateDto>>, BulkProductValidator>();
-        services.AddScoped<IValidator<ProductUpdateDto>, ProductUpdateValidator>();
+        services.AddScoped<IValidator<CreateProductCommand>, ProductValidator>();
+        services.AddScoped<IValidator<List<CreateProductCommand>>, BulkProductValidator>();
+        services.AddScoped<IValidator<UpdateProductCommand>, ProductUpdateValidator>();
         
-        services.AddScoped<IProductCategoryService, ProductCategoryService>();
         services.AddScoped<ICategoryQueryService, CategoryQueryService>();
-        services.AddScoped<IValidator<ProductCategoryCreateDto>, ProductCategoryValidator>();
+        services.AddScoped<IValidator<CreateCategoryCommand>, ProductCategoryValidator>();
         
         return services;
     }

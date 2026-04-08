@@ -1,11 +1,11 @@
 using Api.Middlewares;
+using Application.Catalog.Commands.CreateCategory;
 using Application.Catalog.Dtos;
 using Application.Catalog.Interfaces;
-using Application.Catalog.Services;
 using Application.Common.Abstractions.Envelope;
 using Application.Common.Abstractions.Persistence;
 using Application.Common.Abstractions.Persistence.Paginated;
-using Infrastructure.Persistence.Abstractions;
+using MediatR;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Api.Modules.Catalog;
@@ -29,9 +29,10 @@ public static class ProductCategoryEndpoints
             Envelope<Paginated<ProductCategoryDto>>.Ok(await svc.GetAllAsync(req)))
             .AddEndpointFilter(new ValidationFilter<PaginatedRequest>());
 
-        group.MapPost("/", async ([FromBody] ProductCategoryCreateDto req, IProductCategoryService svc) =>
-            await svc.AddAsync(req))
-            .AddEndpointFilter(new ValidationFilter<ProductCategoryCreateDto>());
+        group.MapPost("/", async ([FromBody] CreateCategoryCommand req, [FromServices] ISender sender, CancellationToken cancellationToken = default) => 
+            await sender.Send(req, cancellationToken))
+            .RequireAuthorization()
+            .AddEndpointFilter(new ValidationFilter<CreateCategoryCommand>());
         
         group.MapGet("/{id:int}", async (int id, ICategoryQueryService svc) =>
         {
