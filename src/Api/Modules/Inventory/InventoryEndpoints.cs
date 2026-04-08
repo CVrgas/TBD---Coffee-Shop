@@ -1,7 +1,7 @@
 using Api.Middlewares;
-using Application.Inventory.Dtos;
-using Application.Inventory.Interfaces;
+using Application.Inventory.Commands.AdjustStock;
 using Infrastructure.Integration;
+using MediatR;
 
 namespace Api.Modules.Inventory;
 
@@ -21,9 +21,9 @@ public static class InventoryEndpoints
             .RequireAuthorization(AuthPolicyName.ElevatedRights)
             .WithTags("Inventory");
 
-        group.MapPost("/adjust", async (AdjustStockDto dto, IInventoryService service) => 
-                await service.AdjustStock(dto))
-            .AddEndpointFilter(new ValidationFilter<AdjustStockDto>())
+        group.MapPost("/adjust", async (AdjustStockCommand request, ISender sender, CancellationToken cancellationToken = default) => 
+                await sender.Send(request, cancellationToken))
+            .AddEndpointFilter(new ValidationFilter<AdjustStockCommand>())
             .WithSummary("Stock Movement");
         
         return endpoints;

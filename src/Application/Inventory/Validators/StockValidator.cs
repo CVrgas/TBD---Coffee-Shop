@@ -1,9 +1,9 @@
-using Application.Inventory.Dtos;
+using Application.Inventory.Commands.AdjustStock;
 using FluentValidation;
 
 namespace Application.Inventory.Validators;
 
-public class StockValidator : AbstractValidator<AdjustStockDto>
+public class StockValidator : AbstractValidator<AdjustStockCommand>
 {
     public StockValidator()
     {

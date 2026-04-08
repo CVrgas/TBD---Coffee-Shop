@@ -3,7 +3,6 @@ using Application.Common.Interfaces;
 using Application.Inventory.Abstractions;
 using Domain.Base;
 using Domain.Inventory;
-using Microsoft.EntityFrameworkCore;
 
 namespace Infrastructure.Persistence.Abstractions;
 
@@ -19,22 +18,19 @@ public class InventoryRepository(IRepository<StockItem, int> repository) : IInve
     /// <returns> True for success and False when not enough stock</returns>
     public async Task<bool> ReserveStock(IDictionary<int, int> movements, string userId, string referenceId, CancellationToken ct = default)
     {
-        var stockItems = await repository.ListAsync(new StockByProductIdsSpec(movements.Keys), asNoTracking: false, ct: ct);
-
-        var listedItems = stockItems.ToList();
+        var stockItems = await repository.ListAsync(new StockByProductIdsSpec(movements.Keys.ToList()), asNoTracking: false, ct: ct);
         
-        if (!RequiredQtyLookup(listedItems, movements, out var adjustmentNeeded)) return false;
+        if (!RequiredQtyLookup(stockItems, movements, out var adjustmentNeeded)) return false;
 
         foreach (var (stockId, quantity) in adjustmentNeeded)
         {
-            var item = listedItems.First(s => s.Id == stockId);
-            
-            item.ReserveStock(quantity);
+            var item = stockItems.First(s => s.Id == stockId);
+            item.ReserveStock(quantity, referenceId);
         }
 
         return true;
     }
-
+    
     /// <summary>
     /// Restore product for a user.
     /// </summary>
@@ -59,7 +55,7 @@ public class InventoryRepository(IRepository<StockItem, int> repository) : IInve
             
             if (pendingRestore <= 0) continue;
             
-            stockItem.ReleaseReservation(pendingRestore);
+            stockItem.ReleaseReservation(pendingRestore, orderId);
         }
         return true;
     }
@@ -83,7 +79,7 @@ public class InventoryRepository(IRepository<StockItem, int> repository) : IInve
                 if (current >= requiredQty) break;
                 
                 var needed = requiredQty - current;
-                var take = Math.Min(needed, item.QuantityOnHand);
+                var take = Math.Min(needed, item.AvailableQuantity);
                 current += take;
                 response[item.Id] = take;
             }
@@ -98,8 +94,8 @@ public class InventoryRepository(IRepository<StockItem, int> repository) : IInve
 
 }
 
-internal class StockByProductIdsSpec(IEnumerable<int> productsIds)
-    : Specification<StockItem>(s => productsIds.Contains(s.ProductId) && s.IsActive && s.QuantityOnHand > s.ReservedQuantity);
+internal class StockByProductIdsSpec(List<int> productsIds)
+    : Specification<StockItem>(s => (!productsIds.Any() || productsIds.Contains(s.ProductId)) && s.IsActive && s.QuantityOnHand > s.ReservedQuantity);
 
 internal class StockByReference : Specification<StockItem>
 {

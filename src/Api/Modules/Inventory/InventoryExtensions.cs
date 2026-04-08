@@ -1,7 +1,5 @@
 using Application.Inventory.Abstractions;
-using Application.Inventory.Dtos;
-using Application.Inventory.Interfaces;
-using Application.Inventory.Services;
+using Application.Inventory.Commands.AdjustStock;
 using Application.Inventory.Validators;
 using FluentValidation;
 using Infrastructure.Persistence.Abstractions;
@@ -20,9 +18,8 @@ public static class InventoryExtensions
     /// <returns>The service collection with inventory services added.</returns>
     public static IServiceCollection AddInventory(this IServiceCollection services)
     {
-        services.AddScoped<IInventoryService, InventoryService>();
         services.AddScoped<IInventoryRepository, InventoryRepository>();
-        services.AddScoped<IValidator<AdjustStockDto>, StockValidator>();
+        services.AddScoped<IValidator<AdjustStockCommand>, StockValidator>();
         return services;
     }
 }
