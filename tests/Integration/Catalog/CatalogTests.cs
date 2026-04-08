@@ -81,7 +81,7 @@ public class CatalogTests(IntegrationTestFactory factory) : BaseIntegrationTest(
         };
 
         // Act
-        var response = await Client.PostAsJsonAsync("/api/v1/products", productRequest);
+        var response = await PostWithIdempotencyAsync("/api/v1/products", productRequest, Guid.NewGuid().ToString());
         if (!response.IsSuccessStatusCode)
         {
             var errorBody = await response.Content.ReadAsStringAsync();
@@ -173,6 +173,16 @@ public class CatalogTests(IntegrationTestFactory factory) : BaseIntegrationTest(
             
             context.Products.Add(product);
             await context.SaveChangesAsync();
+            
+            var stockItem = StockItem.Initialize(
+                productId: product.Id,
+                locationId: 1 // Assuming a default location for testing
+            );
+            
+            stockItem.AdjustStock(100, StockMovementReason.Unspecified); // Add initial stock
+            context.StockItems.Add(stockItem);
+            await context.SaveChangesAsync();
+            
             return product;
         });
         
