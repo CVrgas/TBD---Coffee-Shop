@@ -165,9 +165,6 @@ namespace Infrastructure.Persistence.Migrations
                         .HasColumnType("bit")
                         .HasDefaultValue(true);
 
-                    b.Property<DateTime>("LastMovementAt")
-                        .HasColumnType("datetime2");
-
                     b.Property<int>("LocationId")
                         .HasColumnType("int");
 
@@ -175,15 +172,12 @@ namespace Infrastructure.Persistence.Migrations
                         .HasColumnType("int");
 
                     b.Property<int>("QuantityOnHand")
-                        .HasPrecision(18, 2)
                         .HasColumnType("int");
 
                     b.Property<int>("ReorderLevel")
-                        .HasPrecision(18, 2)
                         .HasColumnType("int");
 
                     b.Property<int>("ReservedQuantity")
-                        .HasPrecision(18, 2)
                         .HasColumnType("int");
 
                     b.Property<byte[]>("RowVersion")
@@ -208,20 +202,16 @@ namespace Infrastructure.Persistence.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("datetime2");
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("datetimeoffset");
 
                     b.Property<string>("CreatedBy")
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<int>("Delta")
-                        .HasPrecision(18, 2)
                         .HasColumnType("int");
 
                     b.Property<int?>("LocationId")
-                        .HasColumnType("int");
-
-                    b.Property<int>("ProductId")
                         .HasColumnType("int");
 
                     b.Property<string>("Reason")
@@ -237,8 +227,6 @@ namespace Infrastructure.Persistence.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("ProductId");
-
                     b.HasIndex("StockItemId");
 
                     b.ToTable("StockMovements");
@@ -252,8 +240,8 @@ namespace Infrastructure.Persistence.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("datetime2");
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("datetimeoffset");
 
                     b.Property<string>("Currency")
                         .IsRequired()
@@ -292,8 +280,8 @@ namespace Infrastructure.Persistence.Migrations
                         .HasPrecision(18, 2)
                         .HasColumnType("decimal(18,2)");
 
-                    b.Property<DateTime>("UpdatedAt")
-                        .HasColumnType("datetime2");
+                    b.Property<DateTimeOffset>("UpdatedAt")
+                        .HasColumnType("datetimeoffset");
 
                     b.Property<int>("UserId")
                         .HasColumnType("int");
@@ -302,8 +290,6 @@ namespace Infrastructure.Persistence.Migrations
 
                     b.HasIndex("OrderNumber")
                         .IsUnique();
-
-                    b.HasIndex("UserId");
 
                     b.ToTable("Orders", (string)null);
                 });
@@ -331,7 +317,7 @@ namespace Infrastructure.Persistence.Migrations
                     b.Property<int>("ProductId")
                         .HasColumnType("int");
 
-                    b.Property<int>("Qty")
+                    b.Property<int>("Quantity")
                         .HasColumnType("int");
 
                     b.Property<decimal>("UnitPrice")
@@ -341,8 +327,6 @@ namespace Infrastructure.Persistence.Migrations
                     b.HasKey("Id");
 
                     b.HasIndex("OrderId");
-
-                    b.HasIndex("ProductId");
 
                     b.ToTable("OrderItems", (string)null);
                 });
@@ -403,8 +387,6 @@ namespace Infrastructure.Persistence.Migrations
                     b.HasIndex("IntentId")
                         .IsUnique();
 
-                    b.HasIndex("OrderId");
-
                     b.ToTable("PaymentRecords", (string)null);
                 });
 
@@ -416,8 +398,8 @@ namespace Infrastructure.Persistence.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("datetime2");
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("datetimeoffset");
 
                     b.Property<string>("Email")
                         .IsRequired()
@@ -453,8 +435,8 @@ namespace Infrastructure.Persistence.Migrations
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<DateTime>("UpdatedAt")
-                        .HasColumnType("datetime2");
+                    b.Property<DateTimeOffset?>("UpdatedAt")
+                        .HasColumnType("datetimeoffset");
 
                     b.HasKey("Id");
 
@@ -485,45 +467,15 @@ namespace Infrastructure.Persistence.Migrations
                     b.Navigation("Parent");
                 });
 
-            modelBuilder.Entity("Domain.Inventory.StockItem", b =>
-                {
-                    b.HasOne("Domain.Catalog.Product", "Product")
-                        .WithMany("StockItems")
-                        .HasForeignKey("ProductId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
-                    b.Navigation("Product");
-                });
-
             modelBuilder.Entity("Domain.Inventory.StockMovement", b =>
                 {
-                    b.HasOne("Domain.Catalog.Product", "Product")
-                        .WithMany("StockMovements")
-                        .HasForeignKey("ProductId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
                     b.HasOne("Domain.Inventory.StockItem", "StockItem")
-                        .WithMany("StockMovements")
+                        .WithMany("Movements")
                         .HasForeignKey("StockItemId")
-                        .OnDelete(DeleteBehavior.Restrict)
+                        .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
-
-                    b.Navigation("Product");
 
                     b.Navigation("StockItem");
-                });
-
-            modelBuilder.Entity("Domain.Orders.Order", b =>
-                {
-                    b.HasOne("Domain.User.User", "User")
-                        .WithMany("Orders")
-                        .HasForeignKey("UserId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
-                    b.Navigation("User");
                 });
 
             modelBuilder.Entity("Domain.Orders.OrderItem", b =>
@@ -534,33 +486,7 @@ namespace Infrastructure.Persistence.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("Domain.Catalog.Product", "Product")
-                        .WithMany()
-                        .HasForeignKey("ProductId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
                     b.Navigation("Order");
-
-                    b.Navigation("Product");
-                });
-
-            modelBuilder.Entity("Domain.Orders.PaymentRecord", b =>
-                {
-                    b.HasOne("Domain.Orders.Order", "Order")
-                        .WithMany("PaymentRecords")
-                        .HasForeignKey("OrderId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
-                    b.Navigation("Order");
-                });
-
-            modelBuilder.Entity("Domain.Catalog.Product", b =>
-                {
-                    b.Navigation("StockItems");
-
-                    b.Navigation("StockMovements");
                 });
 
             modelBuilder.Entity("Domain.Catalog.ProductCategory", b =>
@@ -572,19 +498,12 @@ namespace Infrastructure.Persistence.Migrations
 
             modelBuilder.Entity("Domain.Inventory.StockItem", b =>
                 {
-                    b.Navigation("StockMovements");
+                    b.Navigation("Movements");
                 });
 
             modelBuilder.Entity("Domain.Orders.Order", b =>
                 {
                     b.Navigation("OrderItems");
-
-                    b.Navigation("PaymentRecords");
-                });
-
-            modelBuilder.Entity("Domain.User.User", b =>
-                {
-                    b.Navigation("Orders");
                 });
 #pragma warning restore 612, 618
         }
