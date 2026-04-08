@@ -1,6 +1,5 @@
 using Application.Common;
 using Application.Common.Interfaces;
-using Domain.Base;
 using Domain.Catalog;
 using Domain.Inventory;
 using Domain.User;
@@ -13,24 +12,19 @@ public class DataSeeder(ApplicationDbContext context, IPasswordHasher<User> pass
 {
     private readonly List<ProductCategory> _categories =
     [
-        new()
-        {
-            Name = "Coffee",
-            Code = "COF-001",
-            Slug = "coffee".Slugify(), 
-            Description = "Premium beans sourced ethically.",
-            IsActive = true,
-            CreatedAt = DateTime.UtcNow,
-        },
-        new()
-        {
-            Name = "Pastries",
-            Code = "PAS-001",
-            Slug = "pastries".Slugify(),
-            Description = "Freshly baked goods.",
-            IsActive = true,
-            CreatedAt = DateTime.UtcNow,
-        }
+        ProductCategory.Create(
+            name: "Coffee",
+            slug: "coffee".Slugify(),
+            code: "COF-001",
+            description: "Premium beans sourced ethically."
+            ),
+        
+        ProductCategory.Create(
+            name: "Pastries",
+            code: "PAS-001",
+            slug: "pastries".Slugify(),
+            description: "Freshly baked goods."
+            )
     ];
 
     public async Task SeedAsync()
@@ -52,12 +46,13 @@ public class DataSeeder(ApplicationDbContext context, IPasswordHasher<User> pass
         }
     }
 
-    private StockItem GenerateStockItem(int quantity, bool isActive)
+    private StockItem GenerateStockItem(int product, int quantity, int locationId = 1)
     {
-        var stockItem = new StockItem{ RowVersion = [], LocationId = 1, IsActive = isActive, LastMovementAt = DateTime.UtcNow, };
-        stockItem.AdjustQuantity(quantity);
+        var stockItem = StockItem.Initialize(product, locationId);
+        stockItem.ReceiveStock(quantity);
         return stockItem;
     }
+    
     private async Task SeedProductsAsync()
     {
         var coffeeCategory = await context.ProductCategories.FirstAsync(c => c.Code == "COF-001");
@@ -65,71 +60,51 @@ public class DataSeeder(ApplicationDbContext context, IPasswordHasher<User> pass
 
         var products = new List<Product>
         {
-            new()
-            {
-                Name = "Espresso",
-                Sku = "COF-ESP-01",
-                Price = 2.50m, // Cheap
-                Currency = new CurrencyCode("USD"),
-                Description = "Strong, dark, and essential.",
-                ImageUrl = "https://placehold.co/400x300?text=Espresso",
-                IsActive = true,
-                CategoryId = coffeeCategory.Id,
-                CreatedAt = DateTime.UtcNow,
-                StockItems = new List<StockItem> { GenerateStockItem(20, true) },
-            },
-            new()
-            {
-                Name = "Caramel Latte",
-                Sku = "COF-LAT-02",
-                Price = 5.50m, // Standard
-                Currency = new CurrencyCode("USD"),
-                Description = "Steamed milk with a shot of espresso and caramel syrup.",
-                ImageUrl = "https://placehold.co/400x300?text=Latte",
-                IsActive = true,
-                CategoryId = coffeeCategory.Id,
-                CreatedAt = DateTime.UtcNow,
-                StockItems = new List<StockItem> { GenerateStockItem(10, true) },
-            },
-            new()
-            {
-                Name = "Premium Origin Bundle",
-                Sku = "COF-BUN-99",
-                Price = 50.00m, // Expensive 
-                Currency = new CurrencyCode("USD"),
-                Description = "A selection of our finest beans.",
-                ImageUrl = "https://placehold.co/400x300?text=Bundle",
-                IsActive = true,
-                CategoryId = coffeeCategory.Id,
-                CreatedAt = DateTime.UtcNow,
-                StockItems = new List<StockItem> { GenerateStockItem(5, true) },
-            },
-            new()
-            {
-                Name = "Butter Croissant",
-                Sku = "PAS-CRO-01",
-                Price = 3.00m,
-                Currency = new CurrencyCode("USD"),
-                Description = "Flaky and buttery.",
-                ImageUrl = "https://placehold.co/400x300?text=Croissant",
-                IsActive = true,
-                CategoryId = pastryCategory.Id,
-                CreatedAt = DateTime.UtcNow,
-                StockItems = new List<StockItem> { GenerateStockItem(25, true) },
-            },
-            new()
-            {
-                Name = "Stale Cookie",
-                Sku = "PAS-OLD-00",
-                Price = 0.50m,
-                Currency = new CurrencyCode("USD"),
-                Description = "You should not see this in the catalog.",
-                ImageUrl = "https://placehold.co/400x300?text=No",
-                IsActive = false,
-                CategoryId = pastryCategory.Id,
-                CreatedAt = DateTime.UtcNow,
-                StockItems = new List<StockItem> { GenerateStockItem(50, true) },
-            }
+            Product.Create(                
+                name: "Espresso",
+                sku: "COF-ESP-01",
+                price: 2.50m, // Cheap
+                currencyCode: "USD",
+                description: "Strong, dark, and essential.",
+                imageUrl: "https://placehold.co/400x300?text=Espresso",
+                categoryId: coffeeCategory.Id
+                ),
+            Product.Create(
+                name: "Caramel Latte",
+                sku: "COF-LAT-02",
+                price: 5.50m, // Standard
+                currencyCode: "USD",
+                description: "Steamed milk with a shot of espresso and caramel syrup.",
+                imageUrl: "https://placehold.co/400x300?text=Latte",
+                categoryId: coffeeCategory.Id
+                ),
+            Product.Create(
+                name: "Premium Origin Bundle",
+                sku: "COF-BUN-99",
+                price: 50.00m, // Expensive 
+                currencyCode: "USD",
+                description: "A selection of our finest beans.",
+                imageUrl: "https://placehold.co/400x300?text=Bundle",
+                categoryId: coffeeCategory.Id
+                ),
+            Product.Create(
+                name: "Butter Croissant",
+                sku: "PAS-CRO-01",
+                price: 3.00m,
+                currencyCode: "USD",
+                description: "Flaky and buttery.",
+                imageUrl: "https://placehold.co/400x300?text=Croissant",
+                categoryId: pastryCategory.Id
+                ),
+            Product.Create(
+                name: "Stale Cookie",
+                sku: "PAS-OLD-00",
+                price: 0.50m,
+                currencyCode: "USD",
+                description: "You should not see this in the catalog.",
+                imageUrl: "https://placehold.co/400x300?text=No",
+                categoryId: pastryCategory.Id
+                )
         };
 
         await context.Products.AddRangeAsync(products);
@@ -138,30 +113,20 @@ public class DataSeeder(ApplicationDbContext context, IPasswordHasher<User> pass
 
     private async Task SeedUsersAsync()
     {
-        var admin = new User
-        {
-            FirstName = "Admin",
-            LastName = "User",
-            Email = "admin@commerce.com",
-            Role = UserRole.Admin,
-            IsActive = true,
-            CreatedAt = DateTime.UtcNow,
-            SecurityStamp = Guid.NewGuid().ToString()
-        };
-        // Hash password: "Password123!"
-        admin.PasswordHash = passwordHasher.HashPassword(admin, "Password123!");
+        var admin = User.CreateStaff(
+            firstName: "Admin",
+            lastName: "User",
+            email: "admin@commerce.com",
+            role: UserRole.Admin
+            );
+        admin.SetPassword(passwordHasher.HashPassword(admin, "Password123!"));
 
-        var customer = new User
-        {
-            FirstName = "John",
-            LastName = "Doe",
-            Email = "customer@commerce.com",
-            Role = UserRole.Customer,
-            IsActive = true,
-            CreatedAt = DateTime.UtcNow,
-            SecurityStamp = Guid.NewGuid().ToString()
-        };
-        customer.PasswordHash = passwordHasher.HashPassword(customer, "Password123!");
+        var customer = User.CreateCustomer(
+            firstName: "John",
+            lastName: "Doe",
+            email: "customer@commerce.com"
+            );
+        customer.SetPassword(passwordHasher.HashPassword(customer, "Password123!"));
 
         await context.Users.AddRangeAsync(admin, customer);
         await context.SaveChangesAsync();
