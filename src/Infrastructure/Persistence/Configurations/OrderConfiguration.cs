@@ -12,10 +12,6 @@ public class OrderConfiguration : IEntityTypeConfiguration<Order>
     {
         builder.ToTable("Orders");
         builder.HasKey(o => o.Id);
-        builder.HasOne(o => o.User)
-            .WithMany(u => u.Orders)
-            .HasForeignKey(o => o.UserId)
-            .OnDelete(DeleteBehavior.Restrict);
         
         builder.Property(o => o.Currency)
             .HasConversion(c => c.Code, val => new CurrencyCode(val))

@@ -1,9 +1,9 @@
 using System.Linq.Expressions;
 using Application.Common.Abstractions.Persistence;
-using Application.Common.Abstractions.Persistence.Paginated;
 using Application.Common.Interfaces.User;
+using Application.Orders.Commands.GetPaginatedOrder;
 using Application.Orders.Dtos;
-using Application.Orders.Services;
+using Application.Orders.Interfaces;
 using Domain.Orders;
 using Domain.User;
 using Microsoft.EntityFrameworkCore;
@@ -24,15 +24,22 @@ public class OrderQueries(ApplicationDbContext context, ICurrentUserService user
             .FirstOrDefaultAsync(cancellationToken);
     }
     
-    public async Task<OrderDto?> GetAsync(int id, CancellationToken cancellationToken = default)
+    public async Task<OrderDto?> GetByIdAsync(int id, CancellationToken cancellationToken = default)
     {
         return await context.Orders.AsNoTracking()
             .Where(o => o.Id == id)
             .Select(_getOrderProjection)
             .FirstOrDefaultAsync(cancellationToken);
     }
+    public async Task<OrderDto?> GetByNumberAsync(string orderNumber, CancellationToken cancellationToken = default)
+    {
+        return await context.Orders.AsNoTracking()
+            .Where(o => o.OrderNumber == orderNumber)
+            .Select(_getOrderProjection)
+            .FirstOrDefaultAsync(cancellationToken);
+    }
 
-    public async Task<Paginated<OrderDto>> PaginatedAsync(OrderPaginatedRequest request, CancellationToken cancellationToken = default)
+    public async Task<Paginated<OrderDto>> PaginatedAsync(GetPaginatedOrderCommand request, CancellationToken cancellationToken = default)
     {
         var queryId = userService.UserRole == UserRole.Admin && request.UserId.HasValue
             ? request.UserId.Value // admin can search other users Orders.
@@ -45,10 +52,10 @@ public class OrderQueries(ApplicationDbContext context, ICurrentUserService user
         
         var totalCount = await queryable.CountAsync(cancellationToken);
         
-        queryable = queryable.Skip(request.Skip).Take(request.PageSize);
+        queryable = queryable.Skip(request.Skip).Take(request.PageSize!.Value);
         
         var orders = await queryable.Select(_getOrderProjection).ToListAsync(cancellationToken);
-        return new Paginated<OrderDto>(orders, totalCount, request.PageIndex, request.PageSize);
+        return new Paginated<OrderDto>(orders, totalCount, request.PageIndex!.Value, request.PageSize.Value);
     }
     
     private readonly Expression<Func<Order, OrderDto>> _getOrderProjection = o => new OrderDto(
@@ -58,8 +65,8 @@ public class OrderQueries(ApplicationDbContext context, ICurrentUserService user
         o.Tax,
         o.Total,
         o.Currency.Code,
-        o.CreatedAt,
-        o.UpdatedAt,
-        o.OrderItems.Select( oi => new OrderItemDto(oi.ProductId, oi.Qty)).ToList()
+        o.CreatedAt.UtcDateTime,
+        o.UpdatedAt.UtcDateTime,
+        o.OrderItems.Select( oi => new OrderItemDto(oi.ProductId, oi.Quantity)).ToList()
     );
 }
