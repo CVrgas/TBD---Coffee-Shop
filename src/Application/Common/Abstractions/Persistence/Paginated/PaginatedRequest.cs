@@ -9,19 +9,19 @@ public abstract class PaginatedRequestBase : SortOptionsBase
     private int _pageIndex = 1;
     private int _pageSize = 10;
 
-    public int PageIndex
+    public int? PageIndex
     {
         get => _pageIndex; 
-        private set => Math.Clamp(value, MinPageIndex, int.MaxValue);
+        set => _pageIndex = Math.Clamp(value ?? MinPageIndex, MinPageIndex, int.MaxValue);
     }
-    public int PageSize 
+    public int? PageSize 
     { 
         get => _pageSize; 
-        private set => Math.Clamp(value, MinPageSize, MaxPageSize); 
+        set => _pageSize = Math.Clamp(value ?? MinPageSize, MinPageSize, MaxPageSize); 
     }
     
-    public int Skip => (PageIndex - 1) * PageSize;
-    public bool OnlyActive { get; set; } = true;
+    public int Skip => (_pageIndex - 1) * _pageSize;
+    public bool? OnlyActive { get; set; } = true;
 };
 
 public sealed class PaginatedRequest : PaginatedRequestBase
