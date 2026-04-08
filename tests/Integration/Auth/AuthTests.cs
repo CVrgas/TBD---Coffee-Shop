@@ -1,4 +1,5 @@
 using System.Net.Http.Json;
+using Application.Auth.Dtos;
 using Application.Auth.Services;
 using Application.Common.Abstractions.Envelope;
 using Domain.User;
@@ -26,18 +27,12 @@ public class AuthTests(IntegrationTestFactory factory) : BaseIntegrationTest(fac
             var uniqueEmail = $"user{Guid.NewGuid()}@mail.com";
 
             // user
-            var user = new User
-            {
-                FirstName = "user",
-                LastName = "generic",
-                Email = uniqueEmail,
-                PasswordHash = "genericPassword123",
-                Role = userRole,
-                CreatedAt = DateTime.UtcNow,
-                IsActive = true,
-                SecurityStamp = Guid.NewGuid().ToString(),
-            };
-            user.PasswordHash = hasher.HashPassword(user, user.PasswordHash);
+            var user = User.CreateCustomer(
+                firstName: "user",
+                lastName: "generic",
+                email: uniqueEmail
+                );
+            user.SetPassword(hasher.HashPassword(user, user.PasswordHash));
 
             context.Users.Add(user);
             await context.SaveChangesAsync();

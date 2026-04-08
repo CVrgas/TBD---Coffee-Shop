@@ -1,8 +1,10 @@
-using Application.Auth.Dtos;
+using Application.Auth.Commands.Login;
+using Application.Auth.Commands.Register;
 using Application.Auth.Interfaces;
 using Application.Auth.Services;
 using Application.Auth.Validators;
 using FluentValidation;
+using Infrastructure.Persistence.Abstractions;
 
 namespace Api.Modules.Auth;
 
@@ -18,10 +20,10 @@ public static class AuthExtensions
     /// <returns>The service collection with authentication services added.</returns>
     public static IServiceCollection AddAuth(this IServiceCollection services)
     {
-        services.AddScoped<IAuthService,  AuthService>();
-        
-        services.AddScoped<IValidator<LoginRequest>, LoginValidator>();
-        services.AddScoped<IValidator<RegisterRequest>, RegisterValidator>();
+        services.AddScoped<IAuthQueryService, AuthQueryService>();
+        services.AddScoped<IAuthQueries, AuthQueries>();
+        services.AddScoped<IValidator<LoginCommand>, LoginValidator>();
+        services.AddScoped<IValidator<RegisterCommand>, RegisterValidator>();
         
         return services;
     }

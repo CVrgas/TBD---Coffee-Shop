@@ -1,9 +1,10 @@
-using Application.Auth.Dtos;
+using Application.Auth.Commands.Login;
+using Application.Auth.Commands.Register;
 using FluentValidation;
 
 namespace Application.Auth.Validators;
 
-public sealed class RegisterValidator : AbstractValidator<RegisterRequest>
+public sealed class RegisterValidator : AbstractValidator<RegisterCommand>
 {
     public RegisterValidator()
     {
@@ -25,7 +26,7 @@ public sealed class RegisterValidator : AbstractValidator<RegisterRequest>
     }
 }
 
-public sealed class LoginValidator : AbstractValidator<LoginRequest>
+public sealed class LoginValidator : AbstractValidator<LoginCommand>
 {
     public LoginValidator()
     {
