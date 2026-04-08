@@ -7,6 +7,9 @@
     </PropertyGroup>
 
     <ItemGroup>
+        <InternalsVisibleTo Include="Infrastructure" />
+    </ItemGroup>
+    <ItemGroup>
       <PackageReference Include="Microsoft.EntityFrameworkCore.Abstractions" Version="9.0.10" />
     </ItemGroup>
 

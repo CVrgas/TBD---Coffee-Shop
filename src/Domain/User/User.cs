@@ -6,46 +6,55 @@ public sealed class User : Entity<int>
 {
     public string FirstName { get; private set; } 
     public string LastName { get; private set; }
-    public string Email { get; private set; }
-    public string PasswordHash { get; private set; } = string.Empty;
+    public EmailAddress Email { get; private set; }
+    public PasswordHash PasswordHash { get; private set; }
     public UserRole Role { get; private set; }
     public bool IsActive { get; private set; }
     public string SecurityStamp { get; private set; }
     public DateTimeOffset CreatedAt { get; private set; }
     public DateTimeOffset? UpdatedAt { get; private set; }
     
-    private User() { }
-    
-    public static User CreateCustomer(string firstName, string lastName, string email)
+    private User()
     {
-        if (string.IsNullOrWhiteSpace(email)) throw new ArgumentException("Email required");
+        FirstName = null!;
+        LastName = null!;
+        Email = null!;
+        SecurityStamp = null!;
+        PasswordHash = null!;
+    }
+    
+    public static User CreateCustomer(string firstName, string lastName, string email, PasswordHash passwordHash)
+    {
+        if(string.IsNullOrWhiteSpace(firstName)) throw new ArgumentNullException(nameof(firstName), "First name is required.");
+        if(string.IsNullOrWhiteSpace(lastName)) throw new ArgumentNullException(nameof(lastName), "Last name is required.");
         
-        return new User
+        var user = new User
         {
             FirstName = firstName,
             LastName = lastName,
-            Email = email.ToLowerInvariant(),
+            Email = new EmailAddress(email),
             Role = UserRole.Customer,
             IsActive = true,
             CreatedAt = DateTimeOffset.UtcNow,
-            SecurityStamp = Guid.NewGuid().ToString()
+            SecurityStamp = Guid.NewGuid().ToString(),
+            PasswordHash = passwordHash,
         };
+        return user;
     }
     
-    public static User CreateStaff(string firstName, string lastName, string email, UserRole role)
+    public static User CreateStaff(string firstName, string lastName, string email, UserRole role, PasswordHash passwordHash)
     {
         if (role is UserRole.Customer or UserRole.Anonymous)
             throw new ArgumentException("Use specific method for customers");
 
-        var user = CreateCustomer(firstName, lastName, email);
+        var user = CreateCustomer(firstName, lastName, email, passwordHash);
         user.Role = role;
         return user;
     }
 
-
-    public void SetPassword(string passwordHash)
+    public void UpdatePassword(PasswordHash passwordHash)
     {
-        if (string.IsNullOrWhiteSpace(passwordHash)) throw new ArgumentException("Invalid hash");
+        if (PasswordHash.Value == passwordHash.Value) throw new ArgumentException("New password cannot be the same as the old one");
         
         PasswordHash = passwordHash;
         RegenerateSecurityStamp();
@@ -82,5 +91,3 @@ public sealed class User : Entity<int>
         UpdatedAt = DateTimeOffset.UtcNow;
     }
 }
-
-public enum UserRole { Anonymous, Customer, Staff, Admin }

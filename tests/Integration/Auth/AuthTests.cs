@@ -1,11 +1,10 @@
 using System.Net.Http.Json;
 using Application.Auth.Dtos;
-using Application.Auth.Services;
 using Application.Common.Abstractions.Envelope;
+using Application.Common.Interfaces.Security;
 using Domain.User;
 using Infrastructure.Persistence;
 using Integration.Common;
-using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Integration.Auth;
@@ -23,21 +22,21 @@ public class AuthTests(IntegrationTestFactory factory) : BaseIntegrationTest(fac
         return await ExecuteInScopeAsync(async services =>
         {
             var context = services.GetRequiredService<ApplicationDbContext>();
-            var hasher = services.GetRequiredService<IPasswordHasher<User>>();
+            var hasher = services.GetRequiredService<IPasswordManager>();
             var uniqueEmail = $"user{Guid.NewGuid()}@mail.com";
 
             // user
             var user = User.CreateCustomer(
                 firstName: "user",
                 lastName: "generic",
-                email: uniqueEmail
+                email: uniqueEmail,
+                passwordHash: hasher.HashPassword("password123!")
                 );
-            user.SetPassword(hasher.HashPassword(user, user.PasswordHash));
 
             context.Users.Add(user);
             await context.SaveChangesAsync();
             
-            return new SeedResult(user.Id, user.Email, user.FirstName, user.LastName);
+            return new SeedResult(user.Id, user.Email.Value, user.FirstName, user.LastName);
         });
     }
     

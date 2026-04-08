@@ -104,7 +104,11 @@ public static class DependencyInjection
         
         services.AddScoped<IDataSeeder, DataSeeder>();
         
-        services.Configure<JwtSettings>(config.GetSection("JwtSettings"));
+        services.AddOptions<JwtSettings>()
+            .Bind(config.GetSection(JwtSettings.SectionName))
+            .ValidateDataAnnotations()
+            .ValidateOnStart();
+        
         services.AddAuthentication(options =>
         {
             options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;

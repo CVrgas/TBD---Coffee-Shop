@@ -6,9 +6,10 @@ namespace Infrastructure.Security;
 
 public class IdentityPasswordManager(IPasswordHasher<User> hasher) : IPasswordManager
 {
-    public string HashPassword(User user, string password)
+    public PasswordHash HashPassword(string password)
     {
-        return hasher.HashPassword(user, password);
+        var hashed = hasher.HashPassword(null!, password);
+        return new PasswordHash(hashed);
     }
 
     public bool VerifyPassword(User user, string hashedPassword, string providedPassword)
