@@ -6,6 +6,7 @@ using Api.Modules.Catalog;
 using Api.Modules.Inventory;
 using Api.Modules.Order;
 using Api.Modules.Payment;
+using Application;
 using Asp.Versioning;
 using Infrastructure;
 using Infrastructure.Observability;
@@ -68,6 +69,7 @@ builder.Services.AddSwaggerGen(c =>
 });
 
 builder.Services.AddInfrastructure(builder.Configuration);
+builder.Services.AddApplication();
 
 builder.Services.AddCatalog();
 builder.Services.AddProductCategory();

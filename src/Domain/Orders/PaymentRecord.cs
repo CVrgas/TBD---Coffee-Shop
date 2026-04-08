@@ -1,20 +1,54 @@
-using System.Runtime.InteropServices.JavaScript;
 using Domain.Base;
-using Domain.Catalog;
 
 namespace Domain.Orders;
 
-public class PaymentRecord : Entity<int>, IHasRowVersion
+public sealed class PaymentRecord : Entity<int>, IHasRowVersion
 {
-    public int OrderId { get; set; }
-    public PaymentProvider Provider { get; set; }
-    public string IntentId { get; set; } = null!;
-    public PaymentStatus Status { get; set; }
-    public decimal Amount { get; set; }
-    public CurrencyCode Currency { get; set; }
-    public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
-    public DateTime UpdatedAt { get; set; }
+    private PaymentRecord() { }
+
+    public static PaymentRecord Create(
+        int orderId,
+        PaymentProvider provider,
+        string intentId,
+        PaymentStatus paymentStatus,
+        decimal amount,
+        CurrencyCode currency,
+        string clientSecret)
+    {
+        if(orderId <= 0) throw new NullReferenceException("Order id cannot be less than zero");
+        if(string.IsNullOrWhiteSpace(intentId)) throw new NullReferenceException("Intent id cannot be empty");
+        if(amount <= 0) throw new NullReferenceException("Amount cannot be less than zero");
+        if(string.IsNullOrWhiteSpace(clientSecret)) throw new NullReferenceException("Client secret cannot be empty");
+        
+        return new PaymentRecord
+        {
+            OrderId = orderId,
+            Provider = provider,
+            IntentId = intentId,
+            Status = paymentStatus,
+            Amount = amount,
+            Currency = currency,
+            CreatedAt = DateTime.UtcNow,
+            ClientSecret = clientSecret
+        };
+    }
+    public int OrderId { get; private set; }
+    public PaymentProvider Provider { get; private set; }
+    public string IntentId { get; private set; } = null!;
+    public PaymentStatus Status { get; private set; }
+    public decimal Amount { get; private set; }
+    public CurrencyCode Currency { get; private set; }
+    public DateTime CreatedAt { get; private set; } = DateTime.UtcNow;
+    public DateTime UpdatedAt { get; private set; }
     public byte[] RowVersion { get; private set; } = null!;
-    public Order Order { get; set; } = null!;
-    public string ClientSecret { get; set; } = null!;
+    public string ClientSecret { get; private set; } = null!;
+    
+    public void ChangePaymentStatus(PaymentStatus newStatus)
+    {
+        if(Status == PaymentStatus.Approved) throw new InvalidOperationException("Payment already made.");
+        if(Status == PaymentStatus.Failed)  throw new InvalidOperationException("Payment was declined.");
+        
+        Status = newStatus;
+        
+    }
 }

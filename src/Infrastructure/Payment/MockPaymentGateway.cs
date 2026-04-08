@@ -44,8 +44,8 @@ public class MockPaymentGateway : IPaymentGateway
         var prefix = "pi_";
         var suffix = Random.Shared.Next(0, 9999).ToString("0000");
         
-        if (amount >= 1000) prefix += nameof(IntentState.Insufficient);
-        else if (amount % 1 == 0.99m) prefix += nameof(IntentState.Fraud);
+        if (amount >= 1000) prefix += nameof(IntentState.Fraud);
+        else if (amount % 1 == 0.99m) prefix += nameof(IntentState.Insufficient);
         else prefix += nameof(IntentState.Success);
         
         return string.Concat(prefix, "_mock_" ,suffix);
