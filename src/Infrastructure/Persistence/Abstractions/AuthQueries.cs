@@ -16,7 +16,7 @@ public class AuthQueries(ApplicationDbContext context, ICurrentUserService userC
             .Select(u => new UserMeDto
             {
                 IsActive = u.IsActive,
-                Email = u.Email,
+                Email = u.Email.Value,
                 FirstName = u.FirstName,
                 LastName = u.LastName,
                 Role = u.Role.ToString(),

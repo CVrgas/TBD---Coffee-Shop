@@ -6,8 +6,7 @@ public sealed class User : Entity<int>
 {
     public string FirstName { get; private set; } 
     public string LastName { get; private set; }
-    public string Email { get; private set; }
-    public string PasswordHash { get; private set; } = string.Empty;
+    public EmailAddress Email { get; private set; }
     public PasswordHash PasswordHash { get; private set; }
     public UserRole Role { get; private set; }
     public bool IsActive { get; private set; }
@@ -33,7 +32,7 @@ public sealed class User : Entity<int>
         {
             FirstName = firstName,
             LastName = lastName,
-            Email = email.ToLowerInvariant(),
+            Email = new EmailAddress(email),
             Role = UserRole.Customer,
             IsActive = true,
             CreatedAt = DateTimeOffset.UtcNow,
@@ -92,5 +91,3 @@ public sealed class User : Entity<int>
         UpdatedAt = DateTimeOffset.UtcNow;
     }
 }
-
-public enum UserRole { Anonymous, Customer, Staff, Admin }
