@@ -47,6 +47,7 @@ public static class ProductEndpoints
             .RequireAuthorization(AuthPolicyName.Admin)
             .AddEndpointFilter(new ValidationFilter<CreateProductCommand>())
             .AddEndpointFilter(new IdempotentEndpointFilter())
+            .InvalidateCacheTag(CachePolicies.Catalog)
             .WithSummary("Create a new product catalog entry");
         
         group.MapPut("/{productId:int}", async (int productId, [FromBody] UpdateProductCommand request, [FromServices] ISender sender, CancellationToken cancellationToken = default) =>
@@ -55,22 +56,26 @@ public static class ProductEndpoints
                 return await sender.Send(request, cancellationToken);
             })
             .RequireAuthorization()
+            .InvalidateCacheTag(CachePolicies.Catalog)
             .AddEndpointFilter(new ValidationFilter<UpdateProductCommand>())
             .WithSummary("Update an existing product's complete details");
         
         group.MapPatch("/{productId:int}/price", async (int productId, [FromBody] UpdatePriceCommand request, [FromServices] ISender sender, CancellationToken cancellationToken = default) => 
             await sender.Send(request, cancellationToken))
             .RequireAuthorization(AuthPolicyName.Admin)
+            .InvalidateCacheTag(CachePolicies.Catalog)
             .WithSummary("Modify the price of a specific product");
         
         group.MapPatch("/{productId:int}/status", async (int productId, [FromBody] ToggleStatusCommand request, [FromServices] ISender sender, CancellationToken cancellationToken = default) => 
             await sender.Send(request, cancellationToken))
             .RequireAuthorization(AuthPolicyName.Admin)
+            .InvalidateCacheTag(CachePolicies.Catalog)
             .WithSummary("Toggle the active/inactive status of a product");
         
         group.MapPost("/{productId:int}/ratings", async (int productId, [FromBody] RateProductCommand request, [FromServices] ISender sender, CancellationToken cancellationToken = default) => 
             await sender.Send(request, cancellationToken))
             .RequireAuthorization()
+            .InvalidateCacheTag(CachePolicies.Catalog)
             .WithSummary("Submit a user rating for a product");
 
         group.MapGet("{id:int}", async (int id, IProductQueryService service) =>
