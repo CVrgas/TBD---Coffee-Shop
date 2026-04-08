@@ -4,10 +4,21 @@ namespace Infrastructure.Authentication;
 
 public class JwtSettings
 {
+    public const string SectionName = "JwtSettings";
+    
     [MinLength(32)]
-    public string Secret { get; set; }
-    public string Issuer { get; set; }
-    public string Audience { get; set; }
-    public int ExpirationInSeconds { get; set; }
-    public int RefreshExpirationInSeconds { get; set; }
+    [Required]
+    public required string Secret { get; init; }
+    
+    [Required]
+    public required string Issuer { get; init; }
+    
+    [Required]
+    public required string Audience { get; init; }
+    
+    [Range(1, int.MaxValue)]
+    public int ExpirationInSeconds { get; init; }
+    
+    [Range(1, int.MaxValue)]
+    public int RefreshExpirationInSeconds { get; init; }
 }
