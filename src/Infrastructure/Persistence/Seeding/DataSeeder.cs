@@ -1,14 +1,14 @@
 using Application.Common;
 using Application.Common.Interfaces;
+using Application.Common.Interfaces.Security;
 using Domain.Catalog;
 using Domain.Inventory;
 using Domain.User;
-using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 
 namespace Infrastructure.Persistence.Seeding;
 
-public class DataSeeder(ApplicationDbContext context, IPasswordHasher<User> passwordHasher) : IDataSeeder
+public class DataSeeder(ApplicationDbContext context, IPasswordManager passwordHasher) : IDataSeeder
 {
     private readonly List<ProductCategory> _categories =
     [
@@ -117,16 +117,16 @@ public class DataSeeder(ApplicationDbContext context, IPasswordHasher<User> pass
             firstName: "Admin",
             lastName: "User",
             email: "admin@commerce.com",
-            role: UserRole.Admin
+            role: UserRole.Admin,
+            passwordHash: passwordHasher.HashPassword("Password123!")
             );
-        admin.SetPassword(passwordHasher.HashPassword(admin, "Password123!"));
 
         var customer = User.CreateCustomer(
             firstName: "John",
             lastName: "Doe",
-            email: "customer@commerce.com"
+            email: "customer@commerce.com",
+            passwordHash: passwordHasher.HashPassword("Password123!")
             );
-        customer.SetPassword(passwordHasher.HashPassword(customer, "Password123!"));
 
         await context.Users.AddRangeAsync(admin, customer);
         await context.SaveChangesAsync();

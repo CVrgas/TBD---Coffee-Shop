@@ -19,8 +19,7 @@ public class RegisterCommandHandler(
         var emailExist = await EmailExistAsync(request.Email, cancellationToken);
         if (emailExist) return Envelope<RegisterResult>.BadRequest("Email already exist");
 
-        var user = User.CreateCustomer(request.FirstName, request.LastName, request.Email);
-        user.SetPassword(hasher.HashPassword(user, request.Password));
+        var user = User.CreateCustomer(request.FirstName, request.LastName, request.Email, hasher.HashPassword(request.Password));
 
         await repository.Create(user);
         await uOw.SaveChangesAsync(cancellationToken);

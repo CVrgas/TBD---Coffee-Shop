@@ -3,6 +3,7 @@ using System.Net.Http.Json;
 using Application.Common;
 using Application.Common.Abstractions.Envelope;
 using Application.Common.Interfaces.Payment;
+using Application.Common.Interfaces.Security;
 using Application.Orders.Commands.CreateOrder;
 using Application.Orders.Dtos;
 using Application.Payments.Commands.ConfirmPayment;
@@ -13,7 +14,6 @@ using Domain.Inventory;
 using Domain.User;
 using Infrastructure.Persistence;
 using Integration.Common;
-using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -33,7 +33,7 @@ public class OrderIdempotencyTests(IntegrationTestFactory factory) : BaseIntegra
         {
             // Context
             var context = services.GetRequiredService<ApplicationDbContext>();
-            var hasher = services.GetRequiredService<IPasswordHasher<User>>();
+            var hasher = services.GetRequiredService<IPasswordManager>();
             var uniqueEmail = $"user{Guid.NewGuid()}@mail.com";
             
             // user
@@ -41,15 +41,17 @@ public class OrderIdempotencyTests(IntegrationTestFactory factory) : BaseIntegra
                 ? User.CreateCustomer(
                     email: uniqueEmail,
                     firstName: "user",
-                    lastName: "generic"
+                    lastName: "generic",
+                    passwordHash: hasher.HashPassword("password123!")
                 )
                 : User.CreateStaff(
                     email: uniqueEmail,
                     firstName: "user",
                     lastName: "generic",
-                    role: userRole
+                    role: userRole,
+                    passwordHash: hasher.HashPassword("password123!")
                 );
-            user.SetPassword(hasher.HashPassword(user, user.PasswordHash));
+            
             context.Users.Add(user);
             await context.SaveChangesAsync();
             

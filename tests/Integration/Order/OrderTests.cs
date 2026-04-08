@@ -4,6 +4,7 @@ using System.Text.Json;
 using Application.Common;
 using Application.Common.Abstractions.Envelope;
 using Application.Common.Abstractions.Persistence;
+using Application.Common.Interfaces.Security;
 using Application.Orders.Commands.CancelOrder;
 using Application.Orders.Commands.CreateOrder;
 using Application.Orders.Dtos;
@@ -13,7 +14,6 @@ using Domain.Inventory;
 using Domain.User;
 using Infrastructure.Persistence;
 using Integration.Common;
-using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
@@ -36,7 +36,7 @@ public class OrderTests(IntegrationTestFactory factory) : BaseIntegrationTest(fa
         {
             // Context
             var context = services.GetRequiredService<ApplicationDbContext>();
-            var hasher = services.GetRequiredService<IPasswordHasher<User>>();
+            var hasher = services.GetRequiredService<IPasswordManager>();
             var uniqueEmail = $"user{Guid.NewGuid()}@mail.com";
             
             // user
@@ -44,16 +44,17 @@ public class OrderTests(IntegrationTestFactory factory) : BaseIntegrationTest(fa
                 ? User.CreateCustomer(
                     firstName: "user", 
                     lastName: "generic",
-                    email: uniqueEmail
+                    email: uniqueEmail,
+                    passwordHash: hasher.HashPassword("password123!")
                 )
                 : User.CreateStaff(
                     firstName: "user", 
                     lastName: "generic",
                     email: uniqueEmail,
-                    role: userRole
+                    role: userRole,
+                    passwordHash: hasher.HashPassword("password123!")
                 );
-
-            user.SetPassword(hasher.HashPassword(user, user.PasswordHash));
+            
             context.Users.Add(user);
             
             // product category

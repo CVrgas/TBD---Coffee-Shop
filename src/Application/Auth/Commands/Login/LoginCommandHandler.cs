@@ -22,8 +22,8 @@ public class LoginCommandHandler(
         var watch = Stopwatch.StartNew();
         var user = await repository.GetAsync(new ExistEmailSpec(request.Email), ct: cancellationToken);
         var userExist = user is not null;
-        var userToVerify = user ?? User.CreateCustomer("dummy", "dummy", "dummy@dummy.com");
-        var hashToVerify = userExist ? user!.PasswordHash : hasher.HashPassword(userToVerify, DummyPassword);
+        var hashToVerify = userExist ? user!.PasswordHash : hasher.HashPassword(DummyPassword);
+        var userToVerify = user ?? User.CreateCustomer("dummy", "dummy", "dummy@dummy.com", hashToVerify);
         
         var passwordVerified = hasher.VerifyPassword(userToVerify, hashToVerify, request.Password);
         if (!userExist || !passwordVerified)

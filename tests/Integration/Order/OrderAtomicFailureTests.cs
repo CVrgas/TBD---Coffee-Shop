@@ -2,6 +2,7 @@ using System.Net;
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using Application.Common;
+using Application.Common.Interfaces.Security;
 using Application.Orders.Commands.CreateOrder;
 using Application.Orders.Dtos;
 using Domain.Base;
@@ -47,14 +48,14 @@ public class OrderAtomicFailureTests(IntegrationTestFactory factory) : BaseInteg
     {
         return await ExecuteInScopeAsync(async services => {
             var context = services.GetRequiredService<ApplicationDbContext>();
-            var hasher = services.GetRequiredService<IPasswordHasher<User>>();
+            var hasher = services.GetRequiredService<IPasswordManager>();
             
             var user = User.CreateCustomer(
                 email: $"race_{Guid.NewGuid()}@test.com",
                 firstName: "Race", 
-                lastName: "User"
+                lastName: "User",
+                passwordHash: hasher.HashPassword("password123!")
                 );
-            user.SetPassword(hasher.HashPassword(user, user.PasswordHash));
             context.Users.Add(user);
             await context.SaveChangesAsync();
 

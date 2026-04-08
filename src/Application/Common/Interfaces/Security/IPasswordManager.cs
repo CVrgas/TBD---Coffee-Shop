@@ -1,7 +1,9 @@
+using Domain.User;
+
 namespace Application.Common.Interfaces.Security;
 
 public interface IPasswordManager
 {
-    string HashPassword(Domain.User.User user, string password);
+    PasswordHash HashPassword(string password);
     bool VerifyPassword(Domain.User.User user, string hashedPassword, string providedPassword);
 }

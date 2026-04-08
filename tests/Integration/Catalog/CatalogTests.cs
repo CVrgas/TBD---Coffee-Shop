@@ -6,6 +6,7 @@ using Application.Catalog.Commands.UpdatePrice;
 using Application.Catalog.Dtos;
 using Application.Common;
 using Application.Common.Abstractions.Envelope;
+using Application.Common.Interfaces.Security;
 using Domain.Base;
 using Domain.Catalog;
 using Domain.Inventory;
@@ -13,7 +14,6 @@ using Domain.User;
 using Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
 using Integration.Common;
-using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -37,15 +37,15 @@ public class CatalogTests(IntegrationTestFactory factory) : BaseIntegrationTest(
         return await ExecuteInScopeAsync(async services =>
         {
             var context = services.GetRequiredService<ApplicationDbContext>();
-            var hasher = services.GetRequiredService<IPasswordHasher<User>>();
+            var hasher = services.GetRequiredService<IPasswordManager>();
             var uniqueEmail = $"user{Guid.NewGuid()}@mail.com";
             
             var user = User.CreateCustomer(
                 firstName: "user", 
                 lastName: "generic",
-                email: uniqueEmail
+                email: uniqueEmail,
+                passwordHash: hasher.HashPassword("password123!")
                 );
-            user.SetPassword(hasher.HashPassword(user, user.PasswordHash));
 
             var category = ProductCategory.Create(
                 name: "Coffee",
