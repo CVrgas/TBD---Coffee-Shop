@@ -67,15 +67,17 @@ public class Repository<T, TKey>(ApplicationDbContext dbContext) : RepositoryBas
         var specificationResult = Specifications.SpecificationEvaluator.GetQuery(query, spec);
         return await specificationResult.FirstOrDefaultAsync(cancellationToken: ct);
     }
-    public async Task<IEnumerable<T>> ListAsync(ISpecification<T> spec, bool asNoTracking = true, CancellationToken ct = default)
+    public async Task<IList<T>> ListAsync(ISpecification<T>? spec =  null, bool asNoTracking = true, CancellationToken ct = default)
     {
         var query = asNoTracking ? DbSet.AsNoTracking() : DbSet.AsQueryable();
+        if (spec == null) return await query.ToListAsync(cancellationToken: ct);
         var specificationResult = Specifications.SpecificationEvaluator.GetQuery(query, spec);
         return await specificationResult.ToListAsync(cancellationToken: ct);
     }
-    public async Task<int> CountAsync(ISpecification<T> spec, bool asNoTracking = true, CancellationToken ct = default)
+    public async Task<int> CountAsync(ISpecification<T>? spec = null, bool asNoTracking = true, CancellationToken ct = default)
     {
         var query = asNoTracking ? DbSet.AsNoTracking() : DbSet.AsQueryable();
+        if (spec == null) return await query.CountAsync(ct);
         var specificationResult = Specifications.SpecificationEvaluator.GetQuery(query, spec);
         return await specificationResult.CountAsync(ct);
     }
