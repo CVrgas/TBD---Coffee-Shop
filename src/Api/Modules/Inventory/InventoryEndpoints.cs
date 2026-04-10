@@ -1,5 +1,8 @@
+using Api.Common.Idempotency;
 using Api.Middlewares;
 using Application.Inventory.Commands.AdjustStock;
+using Application.Inventory.Commands.GetStockLevel;
+using Infrastructure.Caching;
 using Infrastructure.Integration;
 using MediatR;
 
@@ -18,12 +21,14 @@ public static class InventoryEndpoints
     public static IEndpointRouteBuilder MapInventory(this IEndpointRouteBuilder endpoints)
     {
         var group = endpoints.MapGroup("/inventory")
-            .RequireAuthorization(AuthPolicyName.ElevatedRights)
+            .RequireAuthorization(AuthorizationPolicy.ElevatedRights.Name)
             .WithTags("Inventory");
 
         group.MapPost("/adjust", async (AdjustStockCommand request, ISender sender, CancellationToken cancellationToken = default) => 
                 await sender.Send(request, cancellationToken))
             .AddEndpointFilter(new ValidationFilter<AdjustStockCommand>())
+            .AddEndpointFilter(new IdempotentEndpointFilter())
+            .InvalidateCacheTag(CachePolicy.Inventory.Name)
             .WithSummary("Stock Movement");
         
         return endpoints;
