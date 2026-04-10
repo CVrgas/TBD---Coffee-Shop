@@ -139,12 +139,11 @@ public static class DependencyInjection
         });
         services.AddAuthorization(opts =>
         {
-            opts.AddPolicy(AuthPolicyName.Customer, policy => policy.RequireRole(nameof(UserRole.Customer)));
-            opts.AddPolicy(AuthPolicyName.Staff, policy => policy.RequireRole(nameof(UserRole.Staff)));
-            opts.AddPolicy(AuthPolicyName.Admin, policy => policy.RequireRole(nameof(UserRole.Admin)));
-            opts.AddPolicy(AuthPolicyName.ElevatedRights, policy => policy.RequireRole(nameof(UserRole.Staff), nameof(UserRole.Admin)));
-            opts.AddPolicy(AuthPolicyName.RegisteredUser,  policy => policy.RequireRole(nameof(UserRole.Staff), nameof(UserRole.Admin), nameof(UserRole.Customer)));
-            
+            // new Version
+            foreach (var authPolicy in AuthorizationPolicy.ListOfPolicies())
+            {
+                opts.AddPolicy(authPolicy.Name, policy => policy.RequireRole(authPolicy.RoleNames));
+            }
         });
         
         return services;

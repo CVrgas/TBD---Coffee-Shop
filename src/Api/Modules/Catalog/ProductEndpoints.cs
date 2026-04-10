@@ -39,15 +39,15 @@ public static class ProductEndpoints
                 var result = await service.PaginatedAsync(request: req);
                 return Envelope<Paginated<ProductDto>>.Ok(result);
             })
-            .CacheOutput(CachePolicies.Catalog)
+            .CacheOutput(CachePolicy.Catalog.Name)
             .WithSummary("Get all products paginated");
         
         group.MapPost("/", async ([FromBody] CreateProductCommand request, [FromServices] ISender sender, CancellationToken cancellationToken = default) =>
             await sender.Send(request, cancellationToken))
-            .RequireAuthorization(AuthPolicyName.Admin)
+            .RequireAuthorization(AuthorizationPolicy.Admin.Name)
             .AddEndpointFilter(new ValidationFilter<CreateProductCommand>())
             .AddEndpointFilter(new IdempotentEndpointFilter())
-            .InvalidateCacheTag(CachePolicies.Catalog)
+            .InvalidateCacheTag(CachePolicy.Catalog.Name)
             .WithSummary("Create a new product catalog entry");
         
         group.MapPut("/{productId:int}", async (int productId, [FromBody] UpdateProductCommand request, [FromServices] ISender sender, CancellationToken cancellationToken = default) =>
@@ -56,26 +56,26 @@ public static class ProductEndpoints
                 return await sender.Send(request, cancellationToken);
             })
             .RequireAuthorization()
-            .InvalidateCacheTag(CachePolicies.Catalog)
+            .InvalidateCacheTag(CachePolicy.Catalog.Name)
             .AddEndpointFilter(new ValidationFilter<UpdateProductCommand>())
             .WithSummary("Update an existing product's complete details");
         
         group.MapPatch("/{productId:int}/price", async (int productId, [FromBody] UpdatePriceCommand request, [FromServices] ISender sender, CancellationToken cancellationToken = default) => 
             await sender.Send(request, cancellationToken))
-            .RequireAuthorization(AuthPolicyName.Admin)
-            .InvalidateCacheTag(CachePolicies.Catalog)
+            .RequireAuthorization(AuthorizationPolicy.Admin.Name)
+            .InvalidateCacheTag(CachePolicy.Catalog.Name)
             .WithSummary("Modify the price of a specific product");
         
         group.MapPatch("/{productId:int}/status", async (int productId, [FromBody] ToggleStatusCommand request, [FromServices] ISender sender, CancellationToken cancellationToken = default) => 
             await sender.Send(request, cancellationToken))
-            .RequireAuthorization(AuthPolicyName.Admin)
-            .InvalidateCacheTag(CachePolicies.Catalog)
+            .RequireAuthorization(AuthorizationPolicy.Admin.Name)
+            .InvalidateCacheTag(CachePolicy.Catalog.Name)
             .WithSummary("Toggle the active/inactive status of a product");
         
         group.MapPost("/{productId:int}/ratings", async (int productId, [FromBody] RateProductCommand request, [FromServices] ISender sender, CancellationToken cancellationToken = default) => 
             await sender.Send(request, cancellationToken))
             .RequireAuthorization()
-            .InvalidateCacheTag(CachePolicies.Catalog)
+            .InvalidateCacheTag(CachePolicy.Catalog.Name)
             .WithSummary("Submit a user rating for a product");
 
         group.MapGet("{id:int}", async (int id, IProductQueryService service) =>
@@ -83,7 +83,7 @@ public static class ProductEndpoints
                 var result = await service.GetByIdAsync(id);
                 return result is null ? Envelope<ProductDto>.NotFound() : Envelope<ProductDto>.Ok(result);
             })
-            .CacheOutput(CachePolicies.Catalog)
+            .CacheOutput(CachePolicy.Catalog.Name)
             .WithSummary("Get product by its ID");
         
         group.MapGet("{sku}", async (string sku, IProductQueryService service) =>
@@ -91,7 +91,7 @@ public static class ProductEndpoints
                 var result = await service.GetBySkuAsync(sku);
                 return result is null ? Envelope<ProductDto>.NotFound() : Envelope<ProductDto>.Ok(result);
             })
-            .CacheOutput(CachePolicies.Catalog)
+            .CacheOutput(CachePolicy.Catalog.Name)
             .WithSummary("Get product by Sku");
         
         group.MapGet("list/{id:int}", async (int id, ICatalogQueries service) =>
