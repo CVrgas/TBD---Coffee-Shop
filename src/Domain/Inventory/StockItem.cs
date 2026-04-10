@@ -63,12 +63,12 @@ public sealed class StockItem : EntityWithRowVersion<int>
         ReservedQuantity -= quantity;
         _movements.Add( new StockMovement(quantity, StockMovementReason.Restore, referenceId));
     }
-    public void AdjustStock(int delta, StockMovementReason reason = StockMovementReason.Adjustment)
+    public void AdjustStock(int delta, StockMovementReason reason = StockMovementReason.Adjustment, string? reference = null)
     {
         if (delta == 0) throw new ArgumentException("Delta cannot be zero");
         if (QuantityOnHand + delta < 0) throw new InvalidOperationException("Adjustment leads to negative stock");
 
         QuantityOnHand += delta;
-        _movements.Add(new StockMovement(delta, reason, "Manual Adjustment"));
+        _movements.Add(new StockMovement(delta, reason, reference));
     }
 }
