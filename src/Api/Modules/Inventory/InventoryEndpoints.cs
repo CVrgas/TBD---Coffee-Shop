@@ -3,8 +3,8 @@ using Api.Middlewares;
 using Application.Inventory.Commands.AdjustStock;
 using Application.Inventory.Commands.GetStockLevel;
 using Infrastructure.Caching;
-using Infrastructure.Integration;
 using MediatR;
+using AuthorizationPolicy = Infrastructure.Integration.AuthorizationPolicy;
 
 namespace Api.Modules.Inventory;
 
@@ -23,6 +23,11 @@ public static class InventoryEndpoints
         var group = endpoints.MapGroup("/inventory")
             .RequireAuthorization(AuthorizationPolicy.ElevatedRights.Name)
             .WithTags("Inventory");
+        
+        group.MapGet("/{productId:int}", async (int productId, ISender sender, CancellationToken cancellationToken = default) => 
+                await sender.Send(new GetStockLevelCommand(productId), cancellationToken))
+            .CacheOutput(CachePolicy.Inventory.Name)
+            .WithSummary("Get Stock Level");
 
         group.MapPost("/adjust", async (AdjustStockCommand request, ISender sender, CancellationToken cancellationToken = default) => 
                 await sender.Send(request, cancellationToken))

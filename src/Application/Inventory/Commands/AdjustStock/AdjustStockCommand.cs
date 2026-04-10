@@ -4,4 +4,4 @@ using MediatR;
 
 namespace Application.Inventory.Commands.AdjustStock;
 
-public sealed record AdjustStockCommand(int ProductId, int Delta, StockMovementReason Reason, byte[] RowVersion, string? ReferenceId) : IRequest<Envelope>;
+public sealed record AdjustStockCommand(int ProductId, int Delta, StockMovementReason Reason, string? ReferenceId) : IRequest<Envelope>;

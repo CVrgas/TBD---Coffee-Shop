@@ -10,31 +10,15 @@ using Microsoft.Extensions.Logging;
 
 namespace Application.Inventory.Commands.AdjustStock;
 
-public class AdjustStockCommandHandler(
-    IRepository<StockItem, int> stockRepository,
-    IUnitOfWork uOw,
-    ILogger<AdjustStockCommandHandler> logger,
-    ICurrentUserService userContext) 
+public class AdjustStockCommandHandler(IRepository<StockItem, int> stockRepository, IUnitOfWork uOw) 
     : IRequestHandler<AdjustStockCommand, Envelope>
 {
-    
-    private bool UserHasPermit => !userContext.IsAuthenticated || userContext.UserRole != UserRole.Admin || userContext.UserRole != UserRole.Staff;
     public async Task<Envelope> Handle(AdjustStockCommand request, CancellationToken cancellationToken)
     {
-        if(!UserHasPermit) return Envelope.Unauthorized();
-        
         var item = await stockRepository.GetAsync(new AdjustSpec(request.ProductId), asNoTracking: false, ct: cancellationToken);
         if(item == null) return Envelope.NotFound("No stock for this item found");
 
-        var newQty = item.QuantityOnHand + request.Delta;
-        if (newQty < 0)
-        {
-            logger.LogWarning("Stock item would go below zero. StockId: {StockItemId}, NewQuantity: {NewQuantity}",
-                item.Id, newQty);
-            return Envelope.BadRequest("Invalid stock quantity, stock quantity cannot be negative");
-        }
-        
-        item.AdjustStock(newQty);
+        item.AdjustStock(request.Delta, reference: request.ReferenceId);
             
         await uOw.SaveChangesAsync(cancellationToken);
         return Envelope.Ok();

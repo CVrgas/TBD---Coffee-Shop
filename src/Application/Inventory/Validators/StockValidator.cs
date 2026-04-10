@@ -14,7 +14,5 @@ public class StockValidator : AbstractValidator<AdjustStockCommand>
         RuleFor(s => s.Reason)
             .IsInEnum()
             .NotEmpty();
-        RuleFor(s => s.RowVersion)
-            .NotEmpty();
     }
 }
