@@ -61,7 +61,7 @@ public class InventoryTests(IntegrationTestFactory factory) : BaseIntegrationTes
         var (productId, userId) = await SeedAsync();
         SetUserContext(userId, UserRole.Admin);
     
-        var response = await Client.GetAsync($"/api/v1/inventory/{productId}");
+        var response = await Client.GetAsync($"/api/v1/inventories/{productId}");
         Assert.True(response.IsSuccessStatusCode, $"Expected success status code but got {(int)response.StatusCode} ({response.StatusCode}).");
         var envelope = await response.Content.ReadFromJsonAsync<Envelope<StockLevelDto>>();
 
@@ -98,7 +98,7 @@ public class InventoryTests(IntegrationTestFactory factory) : BaseIntegrationTes
             await context.SaveChangesAsync();
         });
 
-        var response = await Client.GetAsync($"/api/v1/inventory/{productId}");
+        var response = await Client.GetAsync($"/api/v1/inventories/{productId}");
         Assert.True(response.IsSuccessStatusCode, $"Expected success status code but got {(int)response.StatusCode} ({response.StatusCode}).");
         var envelope = await response.Content.ReadFromJsonAsync<Envelope<StockLevelDto>>();
 
@@ -130,7 +130,7 @@ public class InventoryTests(IntegrationTestFactory factory) : BaseIntegrationTes
         SetUserContext(userId, UserRole.Admin);
         var nonExistentProductId = 99999;
 
-        var response = await Client.GetAsync($"/api/v1/inventory/{nonExistentProductId}");
+        var response = await Client.GetAsync($"/api/v1/inventories/{nonExistentProductId}");
         Assert.True(response.IsSuccessStatusCode, $"Expected success status code but got {(int)response.StatusCode} ({response.StatusCode}).");
         var envelope = await response.Content.ReadFromJsonAsync<Envelope<StockLevelDto>>();
 
@@ -163,7 +163,7 @@ public class InventoryTests(IntegrationTestFactory factory) : BaseIntegrationTes
         );
 
         // Act
-        var response = await PostWithIdempotencyAsync($"/api/v1/inventory/adjust", command, Guid.NewGuid().ToString());
+        var response = await PostWithIdempotencyAsync($"/api/v1/inventories/adjust", command, Guid.NewGuid().ToString());
 
         // Assert
         Assert.True(response.IsSuccessStatusCode, $"Expected success status code but got {(int)response.StatusCode} ({response.StatusCode}).");
@@ -190,7 +190,7 @@ public class InventoryTests(IntegrationTestFactory factory) : BaseIntegrationTes
             ReferenceId: "REF-124"
         );
 
-        var response = await PostWithIdempotencyAsync($"/api/v1/inventory/adjust", command, Guid.NewGuid().ToString());
+        var response = await PostWithIdempotencyAsync($"/api/v1/inventories/adjust", command, Guid.NewGuid().ToString());
 
         Assert.True(response.IsSuccessStatusCode);
 
@@ -216,7 +216,7 @@ public class InventoryTests(IntegrationTestFactory factory) : BaseIntegrationTes
             ReferenceId: "REF-125"
         );
 
-        var response = await PostWithIdempotencyAsync($"/api/v1/inventory/adjust", command, Guid.NewGuid().ToString());
+        var response = await PostWithIdempotencyAsync($"/api/v1/inventories/adjust", command, Guid.NewGuid().ToString());
 
         Assert.Equal(System.Net.HttpStatusCode.NotFound, response.StatusCode);
     }
@@ -234,7 +234,7 @@ public class InventoryTests(IntegrationTestFactory factory) : BaseIntegrationTes
             ReferenceId: "REF-126"
         );
 
-        var response = await PostWithIdempotencyAsync($"/api/v1/inventory/adjust", command, Guid.NewGuid().ToString());
+        var response = await PostWithIdempotencyAsync($"/api/v1/inventories/adjust", command, Guid.NewGuid().ToString());
 
         Assert.False(response.IsSuccessStatusCode);
 
@@ -260,7 +260,7 @@ public class InventoryTests(IntegrationTestFactory factory) : BaseIntegrationTes
             ReferenceId: "REF-127"
         );
 
-        var response = await PostWithIdempotencyAsync($"/api/v1/inventory/adjust", command, Guid.NewGuid().ToString());
+        var response = await PostWithIdempotencyAsync($"/api/v1/inventories/adjust", command, Guid.NewGuid().ToString());
 
         Assert.False(response.IsSuccessStatusCode);
     }
@@ -279,7 +279,7 @@ public class InventoryTests(IntegrationTestFactory factory) : BaseIntegrationTes
             ReferenceId: referenceId
         );
 
-        await PostWithIdempotencyAsync($"/api/v1/inventory/adjust", command, Guid.NewGuid().ToString());
+        await PostWithIdempotencyAsync($"/api/v1/inventories/adjust", command, Guid.NewGuid().ToString());
 
         await ExecuteInScopeAsync(async services =>
         {
@@ -311,8 +311,8 @@ public class InventoryTests(IntegrationTestFactory factory) : BaseIntegrationTes
             ReferenceId: "REF-129"
         );
 
-        var response1 = await PostWithIdempotencyAsync($"/api/v1/inventory/adjust", command, idempotencyKey);
-        var response2 = await PostWithIdempotencyAsync($"/api/v1/inventory/adjust", command, idempotencyKey);
+        var response1 = await PostWithIdempotencyAsync($"/api/v1/inventories/adjust", command, idempotencyKey);
+        var response2 = await PostWithIdempotencyAsync($"/api/v1/inventories/adjust", command, idempotencyKey);
 
         Assert.True(response1.IsSuccessStatusCode);
         Assert.True(response2.IsSuccessStatusCode);

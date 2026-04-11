@@ -3,8 +3,8 @@ using Api.Middlewares;
 using Application.Inventory.Commands.AdjustStock;
 using Application.Inventory.Commands.GetStockLevel;
 using Infrastructure.Caching;
+using Infrastructure.Integration;
 using MediatR;
-using AuthorizationPolicy = Infrastructure.Integration.AuthorizationPolicy;
 
 namespace Api.Modules.Inventory;
 
@@ -20,7 +20,7 @@ public static class InventoryEndpoints
     /// <returns>The endpoint route builder with inventory endpoints mapped.</returns>
     public static IEndpointRouteBuilder MapInventory(this IEndpointRouteBuilder endpoints)
     {
-        var group = endpoints.MapGroup("/inventory")
+        var group = endpoints.MapGroup("/inventories")
             .RequireAuthorization(AuthorizationPolicy.ElevatedRights.Name)
             .WithTags("Inventory");
         
