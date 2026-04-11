@@ -18,7 +18,7 @@ public sealed class StockItem : EntityWithRowVersion<int>
     private StockItem() { }
     public static StockItem Initialize(int productId, int locationId = 1)
     {
-        if (productId <= 0) throw new ArgumentException("Invalid product");
+        if (productId <= 0) throw new ArgumentException("Invalid product", nameof(productId));
         return new StockItem 
         { 
             ProductId = productId, 
@@ -28,14 +28,12 @@ public sealed class StockItem : EntityWithRowVersion<int>
             IsActive = true
         };
     }
-
-    public void ReceiveStock(int quantity, StockMovementReason reason = StockMovementReason.Unspecified)
+    public void ReceiveStock(int quantity, StockMovementReason reason = StockMovementReason.Unspecified, string? referenceId = null)
     {
         if (quantity <= 0) throw new ArgumentOutOfRangeException(nameof(quantity), "Must receive positive amount");
         QuantityOnHand += quantity;
-        _movements.Add(new StockMovement(quantity, reason, null));
+        _movements.Add(new StockMovement(quantityDelta: quantity, reservedDelta: 0, reason, referenceId));
     }
-    
     public void ReserveStock(int quantity, string referenceId)
     {
         ArgumentOutOfRangeException.ThrowIfNegativeOrZero(quantity);
@@ -43,7 +41,7 @@ public sealed class StockItem : EntityWithRowVersion<int>
             throw new InvalidOperationException($"Insufficient available stock. Available: {AvailableQuantity}, Requested: {quantity}");
         
         ReservedQuantity += quantity;
-        _movements.Add( new StockMovement(quantity, StockMovementReason.Reserve, referenceId));
+        _movements.Add( new StockMovement(quantityDelta: 0, reservedDelta: quantity, StockMovementReason.Reserve, referenceId));
     }
     public void ConsumeReservedStock(int quantity, string orderId)
     {
@@ -54,21 +52,21 @@ public sealed class StockItem : EntityWithRowVersion<int>
         ReservedQuantity -= quantity;
         QuantityOnHand -= quantity;
         
-        _movements.Add(new StockMovement(-quantity, StockMovementReason.Sale, orderId));
+        _movements.Add(new StockMovement(quantityDelta: -quantity, reservedDelta: -quantity, StockMovementReason.PurchaseOrder, orderId));
     }
-    
     public void ReleaseReservation(int quantity, string referenceId)
     {
         if (ReservedQuantity < quantity) throw new InvalidOperationException("Cannot release more than reserved");
         ReservedQuantity -= quantity;
-        _movements.Add( new StockMovement(quantity, StockMovementReason.Restore, referenceId));
+        _movements.Add(new StockMovement(quantityDelta: 0, reservedDelta: -quantity, StockMovementReason.Restore, referenceId));
     }
     public void AdjustStock(int delta, StockMovementReason reason = StockMovementReason.Adjustment, string? reference = null)
     {
         if (delta == 0) throw new ArgumentException("Delta cannot be zero");
         if (QuantityOnHand + delta < 0) throw new InvalidOperationException("Adjustment leads to negative stock");
+        if (QuantityOnHand + delta < ReservedQuantity) throw new InvalidOperationException("Adjustment leads to insufficient stock for reserved quantity");
 
         QuantityOnHand += delta;
-        _movements.Add(new StockMovement(delta, reason, reference));
+        _movements.Add(new StockMovement(quantityDelta: delta, reservedDelta: 0, reason, reference));
     }
 }

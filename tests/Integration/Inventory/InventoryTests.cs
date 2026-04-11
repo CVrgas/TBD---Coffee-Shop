@@ -291,7 +291,7 @@ public class InventoryTests(IntegrationTestFactory factory) : BaseIntegrationTes
             Assert.NotNull(stock);
             var movement = stock.Movements.OrderByDescending(m => m.CreatedAt).First();
         
-            Assert.Equal(5, movement.Delta);
+            Assert.Equal(5, movement.QuantityDelta);
             Assert.Equal(StockMovementReason.Adjustment, movement.Reason);
             Assert.Equal(referenceId, movement.ReferenceId);
         });

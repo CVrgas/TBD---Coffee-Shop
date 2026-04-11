@@ -13,7 +13,10 @@ public class StockMovementConfiguration : IEntityTypeConfiguration<StockMovement
             .HasConversion<string>()
             .IsRequired();
             
-        builder.Property(sm => sm.Delta)
+        builder.Property(sm => sm.QuantityDelta)
+            .IsRequired();
+        
+        builder.Property(sm => sm.ReservedDelta)
             .IsRequired();
     }
 }
