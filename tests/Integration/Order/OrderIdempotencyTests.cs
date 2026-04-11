@@ -163,7 +163,7 @@ public class OrderIdempotencyTests(IntegrationTestFactory factory) : BaseIntegra
         var orderNumber = result!.Data;
         
         var createPaymentRequest = new CreatePaymentIntentCommand(orderNumber!);
-        var createPaymentResponse = await PostWithIdempotencyAsync("api/v1/payment/create", createPaymentRequest, Guid.NewGuid().ToString());
+        var createPaymentResponse = await PostWithIdempotencyAsync("api/v1/payments/intents", createPaymentRequest, Guid.NewGuid().ToString());
         Assert.Equal(HttpStatusCode.OK, createPaymentResponse.StatusCode);
         
         var createPayment = await createPaymentResponse.Content.ReadFromJsonAsync<Envelope<PaymentConfirmationResult>>();
@@ -179,7 +179,7 @@ public class OrderIdempotencyTests(IntegrationTestFactory factory) : BaseIntegra
             tasks.Add(Task.Run(async () =>
             {
                 barrier.SignalAndWait();
-                return await PostWithIdempotencyAsync("api/v1/payment/confirm", request, idempotencyKey);
+                return await PostWithIdempotencyAsync("api/v1/payments/confirm", request, idempotencyKey);
             }));
         }
 

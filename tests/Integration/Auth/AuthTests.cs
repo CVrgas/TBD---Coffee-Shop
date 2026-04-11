@@ -61,8 +61,6 @@ public class AuthTests(IntegrationTestFactory factory) : BaseIntegrationTest(fac
         Assert.Equal(result.Data.LastName, seed.LastName);
         
     }
-
-    
 }
 
 internal sealed record SeedResult(int UserId, string Email, string FirstName, string LastName); 

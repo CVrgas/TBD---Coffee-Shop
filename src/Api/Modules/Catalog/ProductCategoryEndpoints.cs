@@ -5,7 +5,6 @@ using Application.Catalog.Interfaces;
 using Application.Common.Abstractions.Envelope;
 using Application.Common.Abstractions.Persistence;
 using Application.Common.Abstractions.Persistence.Paginated;
-using Infrastructure.Integration;
 using MediatR;
 using Microsoft.AspNetCore.Mvc;
 
@@ -23,7 +22,7 @@ public static class ProductCategoryEndpoints
     /// <returns>The endpoint route builder with product category endpoints mapped.</returns>
     public static IEndpointRouteBuilder MapProductCategory(this IEndpointRouteBuilder endpoints)
     {
-        var group = endpoints.MapGroup("/product/category")
+        var group = endpoints.MapGroup("/products/categories")
             .RequireAuthorization()
             .WithTags("ProductCategory");
 

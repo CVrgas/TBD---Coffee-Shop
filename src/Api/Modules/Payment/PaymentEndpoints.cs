@@ -19,7 +19,7 @@ public static class PaymentEndpoints
     /// <returns>The endpoint route builder with payment endpoints mapped.</returns>
     public static IEndpointRouteBuilder MapPayment(this IEndpointRouteBuilder endpoints)
     {
-        var group = endpoints.MapGroup("/payment")
+        var group = endpoints.MapGroup("/payments")
             .RequireAuthorization()
             .WithTags("Payment");
         
@@ -29,7 +29,7 @@ public static class PaymentEndpoints
             .AddEndpointFilter(new IdempotentEndpointFilter())
             .WithSummary("confirmed payment intent");
         
-        group.MapPost("/create", async ([FromBody] CreatePaymentIntentCommand req, [FromServices] ISender sender) => 
+        group.MapPost("/intents", async ([FromBody] CreatePaymentIntentCommand req, [FromServices] ISender sender) => 
             await sender.Send(req, CancellationToken.None))
             .AddEndpointFilter(new ValidationFilter<CreatePaymentIntentCommand>())
             .AddEndpointFilter(new IdempotentEndpointFilter())
