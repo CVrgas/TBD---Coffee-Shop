@@ -46,9 +46,20 @@ public sealed class User : Entity<int>
     {
         if (role is UserRole.Customer or UserRole.Anonymous)
             throw new ArgumentException("Use specific method for customers");
-
-        var user = CreateCustomer(firstName, lastName, email, passwordHash);
-        user.Role = role;
+        if(string.IsNullOrWhiteSpace(firstName)) throw new ArgumentNullException(nameof(firstName), "First name is required.");
+        if(string.IsNullOrWhiteSpace(lastName)) throw new ArgumentNullException(nameof(lastName), "Last name is required.");
+        
+        var user = new User
+        {
+            FirstName = firstName,
+            LastName = lastName,
+            Email = new EmailAddress(email),
+            Role = role,
+            IsActive = true,
+            CreatedAt = DateTimeOffset.UtcNow,
+            SecurityStamp = Guid.NewGuid().ToString(),
+            PasswordHash = passwordHash,
+        };
         return user;
     }
 
@@ -63,6 +74,9 @@ public sealed class User : Entity<int>
 
     public void UpdateProfile(string firstName, string lastName)
     {
+        if(string.IsNullOrWhiteSpace(firstName)) throw new ArgumentNullException(nameof(firstName), "First name is required.");
+        if(string.IsNullOrWhiteSpace(lastName)) throw new ArgumentNullException(nameof(lastName), "Last name is required.");
+        
         FirstName = firstName;
         LastName = lastName;
         MarkAsUpdated();
