@@ -8,6 +8,6 @@ public sealed record OrderDto(
     decimal Total,
     string Currency,
     DateTime CreatedAt,
-    DateTime UpdatedAt,
+    DateTime? UpdatedAt,
     IEnumerable<OrderItemDto> OrderItems);
     

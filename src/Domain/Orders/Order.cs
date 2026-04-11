@@ -7,7 +7,7 @@ public class Order : EntityWithRowVersion<int>
 {
     private Order(){}
     
-    public static Order Create(int userId, CurrencyCode currency, decimal taxPercentage, List<OrderItem>? orderItems = null)
+    public static Order Create(int userId, CurrencyCode currency, decimal taxPercentage)
     {
         return new Order
         {
@@ -16,7 +16,7 @@ public class Order : EntityWithRowVersion<int>
             Status = OrderStatus.Pending,
             TaxPercentage = taxPercentage,
             CreatedAt = DateTime.UtcNow,
-            OrderNumber = $"{DateTime.UtcNow.Year}-{Guid.NewGuid().ToString()[..8].ToUpper()}"
+            OrderNumber = $"{DateTime.UtcNow.Year}-{Guid.NewGuid().ToString()[..8].ToUpper()}",
         };
     }
     
@@ -29,13 +29,12 @@ public class Order : EntityWithRowVersion<int>
     public decimal Total { get; private set; }
     public CurrencyCode Currency { get; private set; }
     public DateTimeOffset CreatedAt { get; private set; } = DateTime.UtcNow;
-    public DateTimeOffset UpdatedAt { get; private set; }
+    public DateTimeOffset? UpdatedAt { get; private set; }
     private readonly List<OrderItem> _orderItems = [];
     public IReadOnlyCollection<OrderItem> OrderItems => _orderItems.AsReadOnly();
     public void AddItem(Product product, int quantity)
     {
-        if(Status != OrderStatus.Pending)
-            throw new InvalidOperationException("Can only add items to pending orders.");
+        if(Status != OrderStatus.Pending) throw new InvalidOperationException("Can only add items to pending orders.");
         
         var existingItem = _orderItems.SingleOrDefault(i => i.ProductId == product.Id);
 
@@ -45,8 +44,7 @@ public class Order : EntityWithRowVersion<int>
         }
         else
         {
-            var newItem = new OrderItem(this, product, quantity);
-            _orderItems.Add(newItem);
+            _orderItems.Add(OrderItem.Create(this, product, quantity));
         }
 
         RecalculateTotals();
@@ -65,6 +63,7 @@ public class Order : EntityWithRowVersion<int>
     {
         if(Status == status) return;
         Status = status;
+        UpdatedAt = DateTime.UtcNow;
     }
     private void RecalculateTotals()
     {
