@@ -9,8 +9,8 @@ public sealed class Product : EntityWithRowVersion<int>
     public string? Sku { get; private set; }
     public string Name { get; private set; } = null!;
     public decimal Price { get; private set; }
-    public bool IsOnSale { get; set; }
-    public decimal? SalePrice { get; set; }
+    public bool IsOnSale { get; private set; }
+    public decimal? SalePrice { get; private set; }
     public CurrencyCode Currency { get; private set; }
     public string? Description { get; private set; }
     public string? ImageUrl { get; private set; }
@@ -67,10 +67,12 @@ public sealed class Product : EntityWithRowVersion<int>
 
     public void UpdateDetails(string? name, string? description, int? categoryId)
     {
-        if (string.IsNullOrWhiteSpace(name) && string.IsNullOrWhiteSpace(description) && categoryId is null or 0) throw new ArgumentException("No changes", nameof(name));
+        var formattedName = name?.Trim();
+        var formattedDescription = description?.Trim();
+        if (string.IsNullOrWhiteSpace(formattedName) && string.IsNullOrWhiteSpace(formattedDescription) && categoryId is null or 0) throw new ArgumentException("No changes", nameof(name));
         
-        Name = name ?? Name;
-        Description = description ?? Description;
+        Name = string.IsNullOrWhiteSpace(formattedName) ? Name : formattedName;
+        Description = string.IsNullOrWhiteSpace(formattedDescription) ? Description : formattedDescription;
         CategoryId = categoryId ?? CategoryId;
         MarkAsUpdated();
     }
@@ -78,5 +80,22 @@ public sealed class Product : EntityWithRowVersion<int>
     private void MarkAsUpdated()
     {
         UpdatedAt = DateTimeOffset.UtcNow;
+    }
+
+    public void PutOnSale(decimal salePrice)
+    {
+        if (salePrice <= 0) throw new ArgumentOutOfRangeException(nameof(salePrice), "Sale price must be strictly positive");
+        if (salePrice >= Price) throw new ArgumentException("Sale price must be less than regular price", nameof(salePrice));
+        
+        SalePrice = salePrice;
+        IsOnSale = true;
+        MarkAsUpdated();
+    }
+    
+    public void EndSale()
+    {
+        SalePrice = null;
+        IsOnSale = false;
+        MarkAsUpdated();
     }
 }

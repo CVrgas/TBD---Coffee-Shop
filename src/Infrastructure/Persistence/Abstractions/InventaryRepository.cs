@@ -46,10 +46,10 @@ public class InventoryRepository(IRepository<StockItem, int> repository) : IInve
             var orderMovements = stockItem.Movements.Where(mv => mv.ReferenceId == orderId).ToList();
             
             var reserved = orderMovements.Where(mv => mv.Reason == StockMovementReason.Reserve)
-                .Sum(mv => mv.Delta);
+                .Sum(mv => mv.ReservedDelta);
 
             var alreadyRestored = orderMovements.Where(mv => mv.Reason == StockMovementReason.Restore)
-                .Sum(mv => mv.Delta);
+                .Sum(mv => mv.ReservedDelta);
 
             var pendingRestore = reserved - alreadyRestored;
             

@@ -15,7 +15,7 @@ public static class OrderMapping
             Total: o.Total,
             Currency: o.Currency.Code,
             CreatedAt: o.CreatedAt.UtcDateTime,
-            UpdatedAt: o.UpdatedAt.UtcDateTime,
+            UpdatedAt: o.UpdatedAt?.UtcDateTime,
             OrderItems: items ?? new List<OrderItemDto>()
         );
     }

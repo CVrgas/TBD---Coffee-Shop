@@ -66,7 +66,7 @@ public class OrderQueries(ApplicationDbContext context, ICurrentUserService user
         o.Total,
         o.Currency.Code,
         o.CreatedAt.UtcDateTime,
-        o.UpdatedAt.UtcDateTime,
+        o.UpdatedAt.HasValue ? o.UpdatedAt.Value.UtcDateTime : null,
         o.OrderItems.Select( oi => new OrderItemDto(oi.ProductId, oi.Quantity)).ToList()
     );
 }

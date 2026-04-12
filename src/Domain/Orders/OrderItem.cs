@@ -6,14 +6,21 @@ namespace Domain.Orders;
 public class OrderItem : Entity<int>
 {
     private OrderItem(){}
-    public OrderItem(Order order, Product product, int quantity)
+    private OrderItem(Order order, Product product, int quantity)
     {
+        if(quantity <= 0) throw new ArgumentOutOfRangeException(nameof(quantity), "Quantity must be greater than zero.");
+        
         Order = order;
         ProductId = product.Id;
         NameSnapshot = product.Name;
         UnitPrice = product.Price;
         Quantity = quantity;
         CalculateLineTotal();
+    }
+
+    public static OrderItem Create(Order order, Product product, int quantity)
+    {
+        return new OrderItem(order, product, quantity);
     }
     
     public int OrderId { get; private set;}  
@@ -26,6 +33,8 @@ public class OrderItem : Entity<int>
 
     internal void AddQuantity(int quantity)
     {
+        if(quantity <= 0) throw new ArgumentOutOfRangeException(nameof(quantity), "Quantity must be greater than zero.");
+        
         Quantity += quantity;
         CalculateLineTotal();
     }

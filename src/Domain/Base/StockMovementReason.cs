@@ -4,7 +4,7 @@ public enum StockMovementReason
 {
     Unspecified,
     Adjustment,
-    Sale,
+    PurchaseOrder,
     Correction,
     Removal,
     Reserve,

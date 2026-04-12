@@ -15,10 +15,10 @@ public sealed class PaymentRecord : Entity<int>, IHasRowVersion
         CurrencyCode currency,
         string clientSecret)
     {
-        if(orderId <= 0) throw new NullReferenceException("Order id cannot be less than zero");
-        if(string.IsNullOrWhiteSpace(intentId)) throw new NullReferenceException("Intent id cannot be empty");
-        if(amount <= 0) throw new NullReferenceException("Amount cannot be less than zero");
-        if(string.IsNullOrWhiteSpace(clientSecret)) throw new NullReferenceException("Client secret cannot be empty");
+        if(orderId <= 0) throw new ArgumentOutOfRangeException(nameof(orderId), "Order id cannot be less than zero");
+        if(string.IsNullOrWhiteSpace(intentId)) throw new ArgumentNullException(nameof(intentId), "Intent id cannot be empty");
+        if(amount <= 0) throw new ArgumentOutOfRangeException(nameof(amount), "Amount cannot be less than zero");
+        if(string.IsNullOrWhiteSpace(clientSecret)) throw new ArgumentNullException(nameof(clientSecret), "Client secret cannot be empty");
         
         return new PaymentRecord
         {
@@ -39,7 +39,7 @@ public sealed class PaymentRecord : Entity<int>, IHasRowVersion
     public decimal Amount { get; private set; }
     public CurrencyCode Currency { get; private set; }
     public DateTime CreatedAt { get; private set; } = DateTime.UtcNow;
-    public DateTime UpdatedAt { get; private set; }
+    public DateTime? UpdatedAt { get; private set; }
     public byte[] RowVersion { get; private set; } = null!;
     public string ClientSecret { get; private set; } = null!;
     
@@ -49,6 +49,6 @@ public sealed class PaymentRecord : Entity<int>, IHasRowVersion
         if(Status == PaymentStatus.Failed)  throw new InvalidOperationException("Payment was declined.");
         
         Status = newStatus;
-        
+        UpdatedAt = DateTime.UtcNow;
     }
 }
