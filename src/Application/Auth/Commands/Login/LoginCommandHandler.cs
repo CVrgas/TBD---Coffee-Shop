@@ -20,7 +20,7 @@ public class LoginCommandHandler(
     public async Task<Envelope<AuthResult>> Handle(LoginCommand request, CancellationToken cancellationToken)
     {
         var watch = Stopwatch.StartNew();
-        var user = await repository.GetAsync(new ExistEmailSpec(request.Email), ct: cancellationToken);
+        var user = await repository.GetAsync(new ExistEmailSpec(new EmailAddress(request.Email)), ct: cancellationToken);
         var userExist = user is not null;
         var hashToVerify = userExist ? user!.PasswordHash : hasher.HashPassword(DummyPassword);
         var userToVerify = user ?? User.CreateCustomer("dummy", "dummy", "dummy@dummy.com", hashToVerify);

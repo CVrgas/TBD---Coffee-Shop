@@ -27,5 +27,5 @@ public class RegisterCommandHandler(
     }
     
     private async Task<bool> EmailExistAsync(string email, CancellationToken ct = default) =>
-        await repository.ExistsAsync(new ExistEmailSpec(email), ct: ct);
+        await repository.ExistsAsync(new ExistEmailSpec(new EmailAddress(email)), ct: ct);
 }
