@@ -139,7 +139,6 @@ public static class DependencyInjection
         });
         services.AddAuthorization(opts =>
         {
-            // new Version
             foreach (var authPolicy in AuthorizationPolicy.ListOfPolicies())
             {
                 opts.AddPolicy(authPolicy.Name, policy => policy.RequireRole(authPolicy.RoleNames));

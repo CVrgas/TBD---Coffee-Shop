@@ -12,12 +12,12 @@ public abstract class PaginatedRequestBase : SortOptionsBase
     public int? PageIndex
     {
         get => _pageIndex; 
-        set => _pageIndex = Math.Clamp(value ?? MinPageIndex, MinPageIndex, int.MaxValue);
+        set => _pageIndex = Math.Clamp(value ?? _pageIndex, MinPageIndex, int.MaxValue);
     }
     public int? PageSize 
     { 
         get => _pageSize; 
-        set => _pageSize = Math.Clamp(value ?? MinPageSize, MinPageSize, MaxPageSize); 
+        set => _pageSize = Math.Clamp(value ?? _pageSize, MinPageSize, MaxPageSize); 
     }
     
     public int Skip => (_pageIndex - 1) * _pageSize;

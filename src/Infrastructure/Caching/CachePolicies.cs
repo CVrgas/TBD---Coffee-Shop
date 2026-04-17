@@ -1,6 +1,5 @@
 namespace Infrastructure.Caching;
 
-// new way
 public class CachePolicy
 {
     public string Name { get; private set; }
