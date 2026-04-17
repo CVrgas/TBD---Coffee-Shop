@@ -1,3 +1,4 @@
+using Application.Common.Abstractions.Persistence.Paginated;
 using Microsoft.AspNetCore.OutputCaching;
 using Microsoft.Extensions.Primitives;
 
@@ -15,8 +16,9 @@ public sealed class PublicCachePolicy(string tag, TimeSpan expiration) : IOutput
         context.AllowCacheLookup = true;
         context.AllowCacheStorage = true;
         context.ResponseExpirationTimeSpan = expiration;
-        
-        context.CacheVaryByRules.QueryKeys = new StringValues(["page", "size", "category", "q"]);
+
+        var paginatedKeys = PaginatedQueriesValues().Concat(["page", "PageIndex", "PageSize", "size", "category", "q" ]).Distinct().ToArray();
+        context.CacheVaryByRules.QueryKeys = new StringValues(paginatedKeys);
         
         context.Tags.Add(tag);
 
@@ -28,4 +30,11 @@ public sealed class PublicCachePolicy(string tag, TimeSpan expiration) : IOutput
 
     public ValueTask ServeResponseAsync(OutputCacheContext context, CancellationToken cancellationToken) 
         => ValueTask.CompletedTask;
+
+    private IEnumerable<string> PaginatedQueriesValues()
+    {
+        return typeof(PaginatedRequest).GetProperties()
+            .Select(p => p.Name)
+            .AsEnumerable();
+    }
 }

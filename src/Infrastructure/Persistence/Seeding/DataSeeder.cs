@@ -1,6 +1,7 @@
 using Application.Common;
 using Application.Common.Interfaces;
 using Application.Common.Interfaces.Security;
+using Domain.Base;
 using Domain.Catalog;
 using Domain.Inventory;
 using Domain.User;
@@ -109,6 +110,15 @@ public class DataSeeder(ApplicationDbContext context, IPasswordManager passwordH
 
         await context.Products.AddRangeAsync(products);
         await context.SaveChangesAsync();
+
+        foreach (var product in products)
+        {
+            var stock = StockItem.Initialize(product.Id);
+            stock.AdjustStock(25, StockMovementReason.Unspecified, reference: "seeding");
+            await context.StockItems.AddAsync(stock);
+        }
+        
+        await  context.SaveChangesAsync();
     }
 
     private async Task SeedUsersAsync()
