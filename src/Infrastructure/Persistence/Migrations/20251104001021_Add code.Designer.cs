@@ -11,7 +11,7 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 namespace Infrastructure.Persistence.Migrations
 {
-    [DbContext(typeof(MyDbContext))]
+    [DbContext(typeof(ApplicationDbContext))]
     [Migration("20251104001021_Add code")]
     partial class Addcode
     {

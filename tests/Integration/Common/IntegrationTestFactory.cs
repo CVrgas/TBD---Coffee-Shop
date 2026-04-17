@@ -38,7 +38,7 @@ public class IntegrationTestFactory : WebApplicationFactory<Program>, IAsyncLife
         await _redisContainer.StartAsync();
 
         using var scope = Services.CreateScope();
-        var dbContext = scope.ServiceProvider.GetRequiredService<MyDbContext>();
+        var dbContext = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
         await dbContext.Database.MigrateAsync();
 
 
@@ -70,9 +70,9 @@ public class IntegrationTestFactory : WebApplicationFactory<Program>, IAsyncLife
     {
         builder.ConfigureTestServices(services =>
         {
-            services.RemoveAll<DbContextOptions<MyDbContext>>();
+            services.RemoveAll<DbContextOptions<ApplicationDbContext>>();
             
-            services.AddDbContext<MyDbContext>(opts =>
+            services.AddDbContext<ApplicationDbContext>(opts =>
                 opts.UseSqlServer(_connectionString));
             
             services.RemoveAll(typeof(IConnectionMultiplexer));

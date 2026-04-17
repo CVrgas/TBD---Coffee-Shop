@@ -1,5 +1,3 @@
-using Application.Common.Abstractions.Envelope;
-
 namespace Application.Inventory.Abstractions;
 
 public interface IInventoryRepository

@@ -1,9 +1,9 @@
-using Application.Catalog.Dtos;
+using Application.Catalog.Commands.CreateCategory;
 using FluentValidation;
 
 namespace Application.Catalog.Validators;
 
-public class ProductCategoryValidator : AbstractValidator<ProductCategoryCreateDto>
+public class ProductCategoryValidator : AbstractValidator<CreateCategoryCommand>
 {
     public ProductCategoryValidator()
     {

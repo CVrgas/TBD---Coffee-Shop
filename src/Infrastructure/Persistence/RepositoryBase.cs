@@ -1,14 +1,12 @@
-using System.Linq.Expressions;
-using Application.Common.Abstractions.Persistence;
 using Domain.Base;
 using Microsoft.EntityFrameworkCore;
 
 namespace Infrastructure.Persistence;
 
-public abstract class RepositoryBase<T, TKey>(MyDbContext dbContext)
+public abstract class RepositoryBase<T, TKey>(ApplicationDbContext dbContext)
     where T : class, IEntity<TKey>
 {
-    protected readonly MyDbContext DbContext = dbContext;
+    protected readonly ApplicationDbContext DbContext = dbContext;
     protected readonly DbSet<T> DbSet = dbContext.Set<T>();
 
     public void AttachWithRowVersion<TWithToken>(TWithToken entity, byte[] rowVersion)

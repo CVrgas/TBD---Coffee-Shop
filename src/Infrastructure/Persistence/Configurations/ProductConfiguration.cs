@@ -26,6 +26,9 @@ public class ProductConfiguration : IEntityTypeConfiguration<Product>
             .HasMaxLength(255)
             .IsRequired();
 
+        builder.HasIndex(p => p.Name)
+            .IsUnique();
+
         builder.Property(p => p.Price)
             .HasPrecision(18, 2)
             .IsRequired();
@@ -53,15 +56,6 @@ public class ProductConfiguration : IEntityTypeConfiguration<Product>
         builder.HasOne(p => p.Category)
             .WithMany(c => c.Products)
             .HasForeignKey(p => p.CategoryId)
-            .OnDelete(DeleteBehavior.Restrict);
-            
-        builder.HasMany(p => p.StockItems)
-            .WithOne(s => s.Product)
-            .HasForeignKey(s => s.ProductId)
-            .OnDelete(DeleteBehavior.Restrict);
-            
-        builder.HasMany(p => p.StockMovements )
-            .WithOne(s => s.Product)
             .OnDelete(DeleteBehavior.Restrict);
     }
 }

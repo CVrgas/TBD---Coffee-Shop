@@ -13,18 +13,10 @@ public class StockMovementConfiguration : IEntityTypeConfiguration<StockMovement
             .HasConversion<string>()
             .IsRequired();
             
-        builder.Property(sm => sm.Delta)
-            .HasPrecision(18, 2)
+        builder.Property(sm => sm.QuantityDelta)
             .IsRequired();
-            
-        builder.HasOne(sm => sm.Product)
-            .WithMany(p => p.StockMovements)
-            .HasForeignKey(sm => sm.ProductId)
-            .OnDelete(DeleteBehavior.Restrict);
-            
-        builder.HasOne(sm => sm.StockItem)
-            .WithMany(si => si.StockMovements)
-            .HasForeignKey(sm => sm.StockItemId)
-            .OnDelete(DeleteBehavior.Restrict);
+        
+        builder.Property(sm => sm.ReservedDelta)
+            .IsRequired();
     }
 }

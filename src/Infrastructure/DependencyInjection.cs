@@ -1,3 +1,4 @@
+using Application.Catalog.Interfaces;
 using Application.Common.Abstractions.Persistence;
 using Application.Common.Abstractions.Persistence.Repository;
 using Application.Common.Interfaces;
@@ -6,22 +7,23 @@ using Infrastructure.Authentication;
 using Infrastructure.Persistence;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Identity;
-using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Logging;
 using Microsoft.IdentityModel.Tokens;
 using OpenTelemetry.Resources;
 using OpenTelemetry.Trace;
 using Serilog;
-using Serilog.Enrichers.Span;
-using System.Threading.RateLimiting;
+using Application.Common.Interfaces.Security;
 using Application.Common.Interfaces.User;
+using Application.Inventory.Abstractions;
 using Infrastructure.Caching;
 using Infrastructure.Idempotency;
 using Infrastructure.Identity;
 using Infrastructure.Integration;
+using Infrastructure.Persistence.Abstractions;
+using Infrastructure.Persistence.Seeding;
+using Infrastructure.Security;
 using Polly;
 using Polly.Retry;
 using StackExchange.Redis;
@@ -30,10 +32,16 @@ namespace Infrastructure;
 
 public static class DependencyInjection
 {
-    public static IServiceCollection AddInfrastructure(this IServiceCollection services, IConfiguration config)
+    public static IServiceCollection AddInfrastructure(this IServiceCollection services, IConfiguration config) 
     {
-        services.AddDbContext<MyDbContext>(opt =>
-            opt.UseSqlServer(config.GetConnectionString("DefaultConnection")));
+        services.AddDbContext<ApplicationDbContext>(opt =>
+            opt.UseSqlServer(config.GetConnectionString("DefaultConnection"), sqlOptions =>
+            {
+                sqlOptions.EnableRetryOnFailure(
+                    maxRetryCount: 3,
+                    maxRetryDelay: TimeSpan.FromSeconds(5),
+                    errorNumbersToAdd: null);
+            }));
 
         services.AddRedis(config.GetConnectionString("RedisConnection") ?? "Not connection string");
         
@@ -90,8 +98,17 @@ public static class DependencyInjection
         services.AddScoped(typeof(IPasswordHasher<>), typeof(PasswordHasher<>));
         services.AddScoped<IUnitOfWork, UnitOfWork>();
         services.AddScoped<IIdempotencyProvider, RedisIdempotencyProvider>();
+        services.AddScoped<IPasswordManager, IdentityPasswordManager>();
+        services.AddScoped<IInventoryQueries, InventoryQueries>();
+        services.AddScoped<ICatalogQueries, CatalogQueries>();
         
-        services.Configure<JwtSettings>(config.GetSection("JwtSettings"));
+        services.AddScoped<IDataSeeder, DataSeeder>();
+        
+        services.AddOptions<JwtSettings>()
+            .Bind(config.GetSection(JwtSettings.SectionName))
+            .ValidateDataAnnotations()
+            .ValidateOnStart();
+        
         services.AddAuthentication(options =>
         {
             options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
@@ -122,12 +139,11 @@ public static class DependencyInjection
         });
         services.AddAuthorization(opts =>
         {
-            opts.AddPolicy(AuthPolicyName.Customer, policy => policy.RequireRole(nameof(UserRole.Customer)));
-            opts.AddPolicy(AuthPolicyName.Staff, policy => policy.RequireRole(nameof(UserRole.Staff)));
-            opts.AddPolicy(AuthPolicyName.Admin, policy => policy.RequireRole(nameof(UserRole.Admin)));
-            opts.AddPolicy(AuthPolicyName.ElevatedRights, policy => policy.RequireRole(nameof(UserRole.Staff), nameof(UserRole.Admin)));
-            opts.AddPolicy(AuthPolicyName.RegisteredUser,  policy => policy.RequireRole(nameof(UserRole.Staff), nameof(UserRole.Admin), nameof(UserRole.Customer)));
-            
+            // new Version
+            foreach (var authPolicy in AuthorizationPolicy.ListOfPolicies())
+            {
+                opts.AddPolicy(authPolicy.Name, policy => policy.RequireRole(authPolicy.RoleNames));
+            }
         });
         
         return services;

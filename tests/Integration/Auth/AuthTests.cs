@@ -1,10 +1,10 @@
 using System.Net.Http.Json;
-using Application.Auth.Services;
+using Application.Auth.Dtos;
 using Application.Common.Abstractions.Envelope;
+using Application.Common.Interfaces.Security;
 using Domain.User;
 using Infrastructure.Persistence;
 using Integration.Common;
-using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Integration.Auth;
@@ -21,28 +21,22 @@ public class AuthTests(IntegrationTestFactory factory) : BaseIntegrationTest(fac
     {
         return await ExecuteInScopeAsync(async services =>
         {
-            var context = services.GetRequiredService<MyDbContext>();
-            var hasher = services.GetRequiredService<IPasswordHasher<User>>();
+            var context = services.GetRequiredService<ApplicationDbContext>();
+            var hasher = services.GetRequiredService<IPasswordManager>();
             var uniqueEmail = $"user{Guid.NewGuid()}@mail.com";
 
             // user
-            var user = new User
-            {
-                FirstName = "user",
-                LastName = "generic",
-                Email = uniqueEmail,
-                PasswordHash = "genericPassword123",
-                Role = userRole,
-                CreatedAt = DateTime.UtcNow,
-                IsActive = true,
-                SecurityStamp = Guid.NewGuid().ToString(),
-            };
-            user.PasswordHash = hasher.HashPassword(user, user.PasswordHash);
+            var user = User.CreateCustomer(
+                firstName: "user",
+                lastName: "generic",
+                email: uniqueEmail,
+                passwordHash: hasher.HashPassword("password123!")
+                );
 
             context.Users.Add(user);
             await context.SaveChangesAsync();
             
-            return new SeedResult(user.Id, user.Email, user.FirstName, user.LastName);
+            return new SeedResult(user.Id, user.Email.Value, user.FirstName, user.LastName);
         });
     }
     
@@ -67,8 +61,6 @@ public class AuthTests(IntegrationTestFactory factory) : BaseIntegrationTest(fac
         Assert.Equal(result.Data.LastName, seed.LastName);
         
     }
-
-    
 }
 
 internal sealed record SeedResult(int UserId, string Email, string FirstName, string LastName); 

@@ -1,7 +1,6 @@
 using System.Globalization;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
-using System.Text;
 using Application.Common.Interfaces;
 using Domain.User;
 using Microsoft.Extensions.Options;
@@ -25,7 +24,7 @@ public class JwtTokenGenerator(IOptions<JwtSettings> options) : IJwtTokenGenerat
             new (JwtRegisteredClaimNames.Sub, user.Id.ToString()),
             new (JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()),
             new (JwtRegisteredClaimNames.Iat, DateTime.UtcNow.ToString(CultureInfo.InvariantCulture)),
-            new (JwtRegisteredClaimNames.Email, user.Email),
+            new (JwtRegisteredClaimNames.Email, user.Email.Value),
             new (JwtRegisteredClaimNames.GivenName, user.FirstName),
             new (JwtRegisteredClaimNames.FamilyName, user.LastName),
             new ("role", user.Role.ToString()),

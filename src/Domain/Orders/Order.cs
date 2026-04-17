@@ -3,25 +3,24 @@ using Domain.Catalog;
 
 namespace Domain.Orders;
 
-public class Order : Entity<int>, IHasRowVersion
+public class Order : EntityWithRowVersion<int>
 {
-    private Order()
+    private Order(){}
+    
+    public static Order Create(int userId, CurrencyCode currency, decimal taxPercentage)
     {
-        _orderItems = [];
-    }
-
-    public Order(int userId, CurrencyCode currency, decimal taxPercentage, List<OrderItem>? orderItems = null)
-    {
-        UserId = userId;
-        Currency = currency;
-        Status = OrderStatus.Pending;
-        TaxPercentage = taxPercentage;
-        CreatedAt = DateTime.UtcNow;
-        _orderItems = orderItems ?? [];
-        OrderNumber = $"{DateTime.UtcNow.Year}-{Guid.NewGuid().ToString()[..8].ToUpper()}";
+        return new Order
+        {
+            UserId = userId,
+            Currency = currency,
+            Status = OrderStatus.Pending,
+            TaxPercentage = taxPercentage,
+            CreatedAt = DateTime.UtcNow,
+            OrderNumber = $"{DateTime.UtcNow.Year}-{Guid.NewGuid().ToString()[..8].ToUpper()}",
+        };
     }
     
-    public string OrderNumber { get; private set; }
+    public string OrderNumber { get; private set; } = null!;
     public int UserId { get; private set; }
     public OrderStatus Status { get; private set; }
     public decimal Subtotal { get; private set; }
@@ -29,17 +28,13 @@ public class Order : Entity<int>, IHasRowVersion
     public decimal TaxPercentage { get; private set; }
     public decimal Total { get; private set; }
     public CurrencyCode Currency { get; private set; }
-    public DateTime CreatedAt { get; private set; } = DateTime.UtcNow;
-    public DateTime UpdatedAt { get; private set; }
-    public byte[] RowVersion { get; private set; } = null!;
-    public User.User User { get; private set; } = null!;
-    private readonly List<OrderItem> _orderItems;
+    public DateTimeOffset CreatedAt { get; private set; } = DateTime.UtcNow;
+    public DateTimeOffset? UpdatedAt { get; private set; }
+    private readonly List<OrderItem> _orderItems = [];
     public IReadOnlyCollection<OrderItem> OrderItems => _orderItems.AsReadOnly();
-    public IEnumerable<PaymentRecord> PaymentRecords { get; private set; } = new List<PaymentRecord>();
     public void AddItem(Product product, int quantity)
     {
-        if(Status != OrderStatus.Pending)
-            throw new InvalidOperationException("Can only add items to pending orders.");
+        if(Status != OrderStatus.Pending) throw new InvalidOperationException("Can only add items to pending orders.");
         
         var existingItem = _orderItems.SingleOrDefault(i => i.ProductId == product.Id);
 
@@ -49,8 +44,7 @@ public class Order : Entity<int>, IHasRowVersion
         }
         else
         {
-            var newItem = new OrderItem(this, product, quantity);
-            _orderItems.Add(newItem);
+            _orderItems.Add(OrderItem.Create(this, product, quantity));
         }
 
         RecalculateTotals();
@@ -69,6 +63,7 @@ public class Order : Entity<int>, IHasRowVersion
     {
         if(Status == status) return;
         Status = status;
+        UpdatedAt = DateTime.UtcNow;
     }
     private void RecalculateTotals()
     {

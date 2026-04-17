@@ -12,7 +12,10 @@ public static class RedisConfiguration
             opts.AddBasePolicy(builder => builder.Expire(TimeSpan.FromSeconds(60)));
             
             // Catalog
-            opts.AddPolicy(CachePolicies.Catalog, new PublicCachePolicy(CachePolicies.Catalog, TimeSpan.FromMinutes(5)));
+            foreach (var cachePolicy in CachePolicy.List())
+            {
+                opts.AddPolicy(cachePolicy.Name, new PublicCachePolicy(cachePolicy.Name, cachePolicy.Expiration));
+            }
         });
         
         service.AddStackExchangeRedisOutputCache(options =>

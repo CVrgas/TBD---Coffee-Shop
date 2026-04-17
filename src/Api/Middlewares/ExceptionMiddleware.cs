@@ -60,6 +60,9 @@ public class ExceptionMiddleware(RequestDelegate next, ILogger<ExceptionMiddlewa
             UnauthorizedAccessException 
                 => (StatusCodes.Status401Unauthorized, 
                     Envelope.Unauthorized()),
+            
+            InvalidOperationException
+                => (StatusCodes.Status500InternalServerError, Envelope.InternalError(isDev ? ex.Message : "An unexpected error occurred.")),
 
             DbUpdateException or { InnerException: DbUpdateException } 
                 => (StatusCodes.Status500InternalServerError, 

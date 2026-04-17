@@ -11,6 +11,4 @@ public interface IRepository<T, TKey> : IReadRepository<T, TKey>  where T : clas
     Task Delete(TKey id);
     void Delete(T entity);
     void DeleteRange(IEnumerable<T> entities);
-    void AttachWithRowVersion<TWith>(TWith entity, byte[] rowVersion)
-        where TWith : class, T, IHasRowVersion;
 }

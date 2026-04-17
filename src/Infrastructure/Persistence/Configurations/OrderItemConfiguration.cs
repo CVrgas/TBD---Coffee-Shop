@@ -16,15 +16,10 @@ public class OrderItemConfiguration : IEntityTypeConfiguration<OrderItem>
             .HasMaxLength(255)
             .IsRequired();
         
-        builder.Property(oi => oi.Qty)
+        builder.Property(oi => oi.Quantity)
             .IsRequired();
         
         builder.Property(oi => oi.UnitPrice).HasPrecision(18, 2);
         builder.Property(oi => oi.LineTotal).HasPrecision(18, 2);
-        
-        builder.HasOne(oi => oi.Product)
-            .WithMany()
-            .HasForeignKey(oi => oi.ProductId)
-            .OnDelete(DeleteBehavior.Restrict);
     }
 }

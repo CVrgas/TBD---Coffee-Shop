@@ -1,9 +1,11 @@
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using Application.Common;
+using Application.Common.Interfaces.Security;
+using Application.Orders.Commands.CreateOrder;
 using Application.Orders.Dtos;
-using Domain.Base;
 using Domain.Catalog;
+using Domain.Inventory;
 using Domain.User;
 using Infrastructure.Persistence;
 using Integration.Common;
@@ -27,44 +29,55 @@ public class OrderConcurrencyTests(IntegrationTestFactory factory) : BaseIntegra
     {
         return await ExecuteInScopeAsync(async services =>
         {
-            var context = services.GetRequiredService<MyDbContext>();
-            var hasher = services.GetRequiredService<IPasswordHasher<User>>();
-            var user = new User
-            {
-                Email = $"race_{Guid.NewGuid()}@test.com",
-                FirstName = "Race", LastName = "User",
-                PasswordHash = "strongPassword123",
-                Role = role,
-                SecurityStamp = Guid.NewGuid().ToString()
-            };
-            user.PasswordHash = hasher.HashPassword(user, user.PasswordHash);
-
+            var context = services.GetRequiredService<ApplicationDbContext>();
+            var hasher = services.GetRequiredService<IPasswordManager>();
+            var user = role == UserRole.Customer
+                ? User.CreateCustomer(
+                    email: $"race_{Guid.NewGuid()}@test.com",
+                    firstName: "Race",
+                    lastName: "User",
+                    passwordHash: hasher.HashPassword("password123!")
+                )
+                : User.CreateStaff(
+                    email: $"race_{Guid.NewGuid()}@test.com",
+                    firstName: "Race",
+                    lastName: "User",
+                    role: role,
+                    passwordHash: hasher.HashPassword("password123!")
+                );
+            
             context.Users.Add(user);
+            await context.SaveChangesAsync();
 
             var productId = 0;
             if (createProduct)
             {
                 var categoryGuid = Guid.NewGuid();
-                var category = new ProductCategory
-                {
-                    Name = "RaceCat" + categoryGuid, Code = "RC", Slug = "rc-" + categoryGuid
-                };
+                var category = ProductCategory.Create(
+                    name: "RaceCat" + categoryGuid,
+                    code: "RC",
+                    slug: "rc-" + categoryGuid
+                );
 
                 context.ProductCategories.Add(category);
+                await context.SaveChangesAsync();
 
                 var uniqueName = $"Coffee_{Guid.NewGuid()}";
-                var product = new Product
-                {
-                    Name = uniqueName,
-                    Sku = Utilities.GenerateSku(category.Code),
-                    Price = 10,
-                    Currency = new CurrencyCode("USD"),
-                    Category = category,
-                    StockItems = new List<Domain.Inventory.StockItem> { new() { IsActive = true } }
-                };
+                var product = Product.Create(
+                    name: uniqueName,
+                    sku: Utilities.GenerateSku(category.Code),
+                    price: 10,
+                    currencyCode: "USD",
+                    categoryId: category.Id
+                    );
                 
-                product.StockItems.First(si => si.IsActive).AdjustQuantity(stockQuantity);
                 context.Products.Add(product);
+                await context.SaveChangesAsync();
+                
+                var stockItem = StockItem.Initialize(product.Id);
+                stockItem.ReceiveStock(stockQuantity);
+                
+                context.StockItems.Add(stockItem);
                 await context.SaveChangesAsync();
                 productId = product.Id;
             }
@@ -106,7 +119,7 @@ public class OrderConcurrencyTests(IntegrationTestFactory factory) : BaseIntegra
         // Act
         foreach (var userId in userIds)
         {
-            var request = new OrderCreationDto("USD", new List<OrderItemDto> { new(productId, 1) });
+            var request = new CreateOrderCommand("USD", new List<OrderItemDto> { new(productId, 1) });
             tasks.Add(Task.Run(async () => await SendConcurrencyRequest(userId, request)));
         }
 
@@ -123,19 +136,18 @@ public class OrderConcurrencyTests(IntegrationTestFactory factory) : BaseIntegra
 
         await ExecuteInScopeAsync(async services =>
         {
-            var context = services.GetRequiredService<MyDbContext>();
+            var context = services.GetRequiredService<ApplicationDbContext>();
             var stockItem = await context.StockItems.FirstAsync(si => si.ProductId == productId);
 
-            Assert.Equal(0, stockItem.QuantityOnHand);
+            Assert.Equal(0, stockItem.AvailableQuantity);
             Assert.Equal(1, stockItem.ReservedQuantity);
 
             var orderCounts = await context.Orders.CountAsync();
             Assert.Equal(1, orderCounts);
         });
-
     }
 
-    private async Task<HttpResponseMessage> SendConcurrencyRequest(int userId, OrderCreationDto request)
+    private async Task<HttpResponseMessage> SendConcurrencyRequest(int userId, CreateOrderCommand request)
     {
         var localClient = _factory.CreateClient();
         localClient.DefaultRequestHeaders.Authorization =
@@ -147,6 +159,6 @@ public class OrderConcurrencyTests(IntegrationTestFactory factory) : BaseIntegra
         var idempotencyKey = Guid.NewGuid().ToString();
         localClient.DefaultRequestHeaders.Add(TestAuthHandler.IdempotencyKey, idempotencyKey);
         
-        return await localClient.PostAsJsonAsync("/api/v1/order/add", request);
+        return await localClient.PostAsJsonAsync("/api/v1/orders", request);
     }
 }

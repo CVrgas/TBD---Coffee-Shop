@@ -1,12 +1,12 @@
 using Application.Common.Abstractions.Persistence.Repository;
+using Application.Common.Interfaces;
 using Application.Inventory.Abstractions;
 using Domain.Base;
 using Domain.Inventory;
-using Microsoft.EntityFrameworkCore;
 
 namespace Infrastructure.Persistence.Abstractions;
 
-public class InventoryRepository(IRepository<StockItem, int> repository, IRepository<StockMovement, int> movementRepository) : IInventoryRepository
+public class InventoryRepository(IRepository<StockItem, int> repository) : IInventoryRepository
 {
     /// <summary>
     /// Reserve product for a user.
@@ -18,38 +18,19 @@ public class InventoryRepository(IRepository<StockItem, int> repository, IReposi
     /// <returns> True for success and False when not enough stock</returns>
     public async Task<bool> ReserveStock(IDictionary<int, int> movements, string userId, string referenceId, CancellationToken ct = default)
     {
-        var stockItems = await repository.ListAsync(
-            predicate: s => movements.Keys.Contains(s.ProductId) 
-                 && s.IsActive 
-                 && s.Product.IsActive 
-                 && s.QuantityOnHand > 0,
-            asNoTracking: false,
-            ct: ct);
-
-        var listedItems = stockItems.ToList();
+        var stockItems = await repository.ListAsync(new StockByProductIdsSpec(movements.Keys.ToList()), asNoTracking: false, ct: ct);
         
-        if (!RequiredQtyLookup(listedItems, movements, out var adjustmentNeeded)) return false;
+        if (!RequiredQtyLookup(stockItems, movements, out var adjustmentNeeded)) return false;
 
         foreach (var (stockId, quantity) in adjustmentNeeded)
         {
-            var item = listedItems.First(s => s.Id == stockId);
-            
-            item.ReserveStock(quantity);
-            
-            await movementRepository.Create(
-                new StockMovement {
-                    ProductId = item.ProductId,
-                    CreatedBy = userId,
-                    Reason = StockMovementReason.Reserve,
-                    Delta = quantity,
-                    StockItemId = item.Id,
-                    ReferenceId = referenceId 
-                });
+            var item = stockItems.First(s => s.Id == stockId);
+            item.ReserveStock(quantity, referenceId);
         }
 
         return true;
     }
-
+    
     /// <summary>
     /// Restore product for a user.
     /// </summary>
@@ -59,39 +40,23 @@ public class InventoryRepository(IRepository<StockItem, int> repository, IReposi
     /// <returns> True for success and False when not enough stock</returns>
     public async Task<bool> RestoreStock(string orderId, string userId, CancellationToken ct = default)
     {
-        var stockItems = await repository.ListAsync(
-            i => i.StockMovements.Any(m => m.ReferenceId == orderId),
-            includes: q => q.Include(i =>
-                i.StockMovements.Where(mv => mv.ReferenceId == orderId)),
-            asNoTracking: false,
-            ct: ct);
-
+        var stockItems = await repository.ListAsync(new StockByReference(orderId), asNoTracking: false, ct: ct);
         foreach (var stockItem in stockItems)
         {
-            var orderMovements = stockItem.StockMovements.Where(mv => mv.ReferenceId == orderId).ToList();
+            var orderMovements = stockItem.Movements.Where(mv => mv.ReferenceId == orderId).ToList();
             
             var reserved = orderMovements.Where(mv => mv.Reason == StockMovementReason.Reserve)
-                .Sum(mv => mv.Delta);
+                .Sum(mv => mv.ReservedDelta);
 
             var alreadyRestored = orderMovements.Where(mv => mv.Reason == StockMovementReason.Restore)
-                .Sum(mv => mv.Delta);
+                .Sum(mv => mv.ReservedDelta);
 
             var pendingRestore = reserved - alreadyRestored;
             
             if (pendingRestore <= 0) continue;
             
-            stockItem.RestoreStock(pendingRestore);
-            
-            await movementRepository.Create(new StockMovement {
-                ProductId = stockItem.ProductId,
-                CreatedBy = userId,
-                Reason = StockMovementReason.Restore,
-                Delta = pendingRestore,
-                StockItemId = stockItem.Id,
-                ReferenceId = orderId
-            });
+            stockItem.ReleaseReservation(pendingRestore, orderId);
         }
-        
         return true;
     }
 
@@ -114,7 +79,7 @@ public class InventoryRepository(IRepository<StockItem, int> repository, IReposi
                 if (current >= requiredQty) break;
                 
                 var needed = requiredQty - current;
-                var take = Math.Min(needed, item.QuantityOnHand);
+                var take = Math.Min(needed, item.AvailableQuantity);
                 current += take;
                 response[item.Id] = take;
             }
@@ -127,4 +92,15 @@ public class InventoryRepository(IRepository<StockItem, int> repository, IReposi
     }
     
 
+}
+
+internal class StockByProductIdsSpec(List<int> productsIds)
+    : Specification<StockItem>(s => (!productsIds.Any() || productsIds.Contains(s.ProductId)) && s.IsActive && s.QuantityOnHand > s.ReservedQuantity);
+
+internal class StockByReference : Specification<StockItem>
+{
+    public StockByReference(string referenceId) : base(s => s.Movements.Any(m => m.ReferenceId == referenceId))
+    {
+        AddInclude(s => s.Movements.Where(m => m.ReferenceId == referenceId));
+    }
 }

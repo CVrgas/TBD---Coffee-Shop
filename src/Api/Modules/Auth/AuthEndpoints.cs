@@ -1,7 +1,10 @@
 using Api.Middlewares;
+using Application.Auth.Commands.Login;
+using Application.Auth.Commands.Register;
 using Application.Auth.Dtos;
-using Application.Auth.Services;
-using Application.Common.Abstractions.Envelope;
+using Application.Auth.Interfaces;
+using MediatR;
+using Microsoft.AspNetCore.Mvc;
 using RegisterRequest = Application.Auth.Dtos.RegisterRequest;
 
 namespace Api.Modules.Auth;
@@ -21,19 +24,19 @@ public static class AuthEndpoints
         var group = endpoints.MapGroup("/auth")
             .WithTags("Auth");
 
-        group.MapPost("/register", async (RegisterRequest req, IAuthService authService) => 
-                await authService.RegisterAsync(req))
-            .AddEndpointFilter(new ValidationFilter<RegisterRequest>())
+        group.MapPost("/register", async ([FromBody] RegisterCommand req, [FromServices] ISender sender, CancellationToken cancellationToken = default) => 
+            await sender.Send(req, cancellationToken))
+            .AddEndpointFilter(new ValidationFilter<RegisterCommand>())
             .WithSummary("User Registration")
             .WithName("Registration");
         
-        group.MapPost("/login", async (LoginRequest req, IAuthService authService) =>
-            await authService.LoginAsync(req))
-            .AddEndpointFilter(new ValidationFilter<LoginRequest>())
+        group.MapPost("/login", async ([FromBody] LoginCommand req, [FromServices] ISender sender, CancellationToken cancellationToken = default) => 
+            await sender.Send(req, cancellationToken))
+            .AddEndpointFilter(new ValidationFilter<LoginCommand>())
             .WithSummary("User Login")
             .WithName("Login");
 
-        group.MapGet("/me", async (IAuthService authService) =>
+        group.MapGet("/me", async ([FromServices] IAuthQueryService authService) =>
                 await authService.GetMe())
             .RequireAuthorization()
             .WithSummary("Get Me")

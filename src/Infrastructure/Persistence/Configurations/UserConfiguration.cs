@@ -11,6 +11,7 @@ public class UserConfiguration : IEntityTypeConfiguration<User>
         builder.HasKey(u => u.Id);
             
         builder.Property(u => u.Email)
+            .HasConversion(e => e.Value, v => new EmailAddress(v))
             .HasMaxLength(255)
             .IsRequired();
             
@@ -18,6 +19,7 @@ public class UserConfiguration : IEntityTypeConfiguration<User>
             .IsUnique();
             
         builder.Property(u => u.PasswordHash)
+            .HasConversion(h => h.Value, v => new PasswordHash(v))
             .HasMaxLength(500)
             .IsRequired();
             

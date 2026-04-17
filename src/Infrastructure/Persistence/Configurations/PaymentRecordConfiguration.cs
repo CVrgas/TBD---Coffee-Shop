@@ -14,21 +14,12 @@ public class PaymentRecordConfiguration : IEntityTypeConfiguration<PaymentRecord
         
         builder.HasKey(pr => pr.Id);
         
-        builder.HasOne(pr => pr.Order)
-            .WithMany(o => o.PaymentRecords)
-            .HasForeignKey(pr => pr.OrderId)
-            .OnDelete(DeleteBehavior.Restrict);
-        
         builder.Property(pr => pr.IntentId)
             .HasMaxLength(100)
             .IsRequired();
 
         builder.HasIndex(pr => pr.IntentId)
             .IsUnique();
-        
-        builder.Property(pr => pr.Status)
-            .HasConversion<string>()
-            .HasMaxLength(20);
         
         builder.Property(pr => pr.Provider)
             .HasConversion<string>()

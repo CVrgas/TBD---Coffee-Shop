@@ -1,5 +1,4 @@
-using Application.Catalog.Dtos;
-using Application.Catalog.Services;
+using Application.Catalog.Commands.CreateCategory;
 using Application.Catalog.Validators;
 using FluentValidation;
 
@@ -17,8 +16,7 @@ public static class ProductCategoryExtensions2
     /// <returns>The service collection with product category services added.</returns>
     public static IServiceCollection AddProductCategory(this IServiceCollection services)
     {
-        services.AddScoped<IProductCategoryService, ProductCategoryService>();
-        services.AddScoped<IValidator<ProductCategoryCreateDto>, ProductCategoryValidator>();
+        services.AddScoped<IValidator<CreateCategoryCommand>, ProductCategoryValidator>();
         
         return services;
     }

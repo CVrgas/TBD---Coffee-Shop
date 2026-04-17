@@ -6,10 +6,11 @@ using Api.Modules.Catalog;
 using Api.Modules.Inventory;
 using Api.Modules.Order;
 using Api.Modules.Payment;
-using Application.Common.Abstractions.Envelope;
+using Application;
 using Asp.Versioning;
 using Infrastructure;
 using Infrastructure.Observability;
+using Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
 using Microsoft.OpenApi.Models;
@@ -68,6 +69,7 @@ builder.Services.AddSwaggerGen(c =>
 });
 
 builder.Services.AddInfrastructure(builder.Configuration);
+builder.Services.AddApplication();
 
 builder.Services.AddCatalog();
 builder.Services.AddProductCategory();
@@ -81,7 +83,7 @@ var app = builder.Build();
 using (var scope = app.Services.CreateScope())
 {
     var services = scope.ServiceProvider;
-    var context = services.GetRequiredService<Infrastructure.Persistence.MyDbContext>();
+    var context = services.GetRequiredService<ApplicationDbContext>();
     
     if (app.Environment.IsDevelopment())
     {
@@ -131,6 +133,7 @@ routes.MapPayment();
 // Swagger.
 if (app.Environment.IsDevelopment())
 {
+    await app.ApplyMigrationsAsync();
     app.UseSwagger();
     app.UseSwaggerUI(options =>
     {

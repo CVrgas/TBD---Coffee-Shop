@@ -26,7 +26,7 @@ public sealed class ValidationFilter<T> : IEndpointFilter where T : class
         var arg = context.Arguments.FirstOrDefault(a => a?.GetType() == typeof(T)) as T;
         if (arg is null)
         {
-            return Results.BadRequest(Envelope.BadRequest("The request body is missing or invalid."));
+            return Envelope.BadRequest("The request body is missing or invalid.");
         }
 
         var validationResult = await validator.ValidateAsync(arg);
