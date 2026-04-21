@@ -1,5 +1,6 @@
 using Application.Common.Abstractions.Envelope;
 using Domain.Base;
+using Domain.Base.ValueObjects;
 using MediatR;
 
 namespace Application.Catalog.Commands.UpdatePrice;

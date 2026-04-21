@@ -1,18 +1,19 @@
 using System.Diagnostics;
 using Application.Auth.Dtos;
-using Application.Auth.Specifications;
 using Application.Common.Abstractions.Envelope;
-using Application.Common.Abstractions.Persistence.Repository;
 using Application.Common.Interfaces;
 using Application.Common.Interfaces.Security;
-using Domain.User;
+using Domain.Users;
+using Domain.Users.Entities;
+using Domain.Users.ValueObjects;
 using MediatR;
+using Microsoft.EntityFrameworkCore;
 
 namespace Application.Auth.Commands.Login;
 
 public class LoginCommandHandler(
     IPasswordManager hasher, 
-    IRepository<User, int> repository, 
+    IAppDbContext context, 
     IJwtTokenGenerator generator) : IRequestHandler<LoginCommand, Envelope<AuthResult>>
 {
     private const string DummyPassword = "myStrongPassword123";
@@ -20,7 +21,8 @@ public class LoginCommandHandler(
     public async Task<Envelope<AuthResult>> Handle(LoginCommand request, CancellationToken cancellationToken)
     {
         var watch = Stopwatch.StartNew();
-        var user = await repository.GetAsync(new ExistEmailSpec(request.Email), ct: cancellationToken);
+        var email = new EmailAddress(request.Email);
+        var user = await context.Users.Where(u => u.Email == email).FirstOrDefaultAsync(cancellationToken: cancellationToken);
         var userExist = user is not null;
         var hashToVerify = userExist ? user!.PasswordHash : hasher.HashPassword(DummyPassword);
         var userToVerify = user ?? User.CreateCustomer("dummy", "dummy", "dummy@dummy.com", hashToVerify);

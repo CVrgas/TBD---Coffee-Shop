@@ -1,4 +1,5 @@
-using Domain.Base;
+using Domain.Base.Enum;
+using Domain.Base.ValueObjects;
 using Domain.Catalog;
 
 namespace Unit.Order;
@@ -9,7 +10,7 @@ public class OrderUnitTests
     public void Create_WithValidData_InstantiatesOrderWithPendingStatusAndGeneratedNumber()
     {
         // Arrange & Act
-        var order = Domain.Orders.Order.Create(1, new CurrencyCode("USD"), 0.1m);
+        var order = Domain.Orders.Entities.Order.Create(1, new CurrencyCode("USD"), 0.1m);
 
         // Assert
         Assert.Equal(OrderStatus.Pending, order.Status);
@@ -20,7 +21,7 @@ public class OrderUnitTests
     public void Create_SetsInitialSubtotalTaxAndTotalToZero()
     {
         // Arrange & Act
-        var order = Domain.Orders.Order.Create(1, new CurrencyCode("USD"), 0.1m);
+        var order = Domain.Orders.Entities.Order.Create(1, new CurrencyCode("USD"), 0.1m);
 
         // Assert
         Assert.Equal(0, order.Subtotal);
@@ -33,12 +34,12 @@ public class OrderUnitTests
     public void AddItem_WhenPendingAndNewProduct_AddsItemAndRecalculatesTotals()
     {
         // Arrange
-        var order = Domain.Orders.Order.Create(1, new CurrencyCode("USD"), 0.1m);
+        var order = Domain.Orders.Entities.Order.Create(1, new CurrencyCode("USD"), 0.1m);
         var product = Product.Create("Coffee", "COF-001", 10.0m, "USD", 1);
         var quantity = 2;
 
         // Act
-        order.AddItem(product, quantity);
+        order.AddItem(product.Id, product.Name, product.Price, quantity);
 
         // Assert
         Assert.Single(order.OrderItems);
@@ -51,12 +52,12 @@ public class OrderUnitTests
     public void AddItem_WhenPendingAndExistingProduct_IncreasesQuantityAndRecalculatesTotals()
     {
         // Arrange
-        var order = Domain.Orders.Order.Create(1, new CurrencyCode("USD"), 0.1m);
+        var order = Domain.Orders.Entities.Order.Create(1, new CurrencyCode("USD"), 0.1m);
         var product = Product.Create("Coffee", "COF-001", 10.0m, "USD", 1);
-        order.AddItem(product, 2);
+        order.AddItem(product.Id, product.Name, product.Price, 2);
 
         // Act
-        order.AddItem(product, 3);
+        order.AddItem(product.Id, product.Name, product.Price, 3);
 
         // Assert
         Assert.Single(order.OrderItems);
@@ -70,12 +71,12 @@ public class OrderUnitTests
     public void AddItem_WhenStatusIsNotPending_ThrowsInvalidOperationException()
     {
         // Arrange
-        var order = Domain.Orders.Order.Create(1, new CurrencyCode("USD"), 0.1m);
+        var order = Domain.Orders.Entities.Order.Create(1, new CurrencyCode("USD"), 0.1m);
         order.UpdateStatus(OrderStatus.Confirmed);
         var product = Product.Create("Coffee", "COF-001", 10.0m, "USD", 1);
 
         // Act & Assert
-        Assert.Throws<InvalidOperationException>(() => order.AddItem(product, 1));
+        Assert.Throws<InvalidOperationException>(() => order.AddItem(product.Id, product.Name, product.Price, 1));
     }
     
     // RemoveItem
@@ -83,9 +84,9 @@ public class OrderUnitTests
     public void RemoveItem_WhenPendingAndItemExists_RemovesItemAndRecalculatesTotals()
     {
         // Arrange
-        var order = Domain.Orders.Order.Create(1, new CurrencyCode("USD"), 0.1m);
+        var order = Domain.Orders.Entities.Order.Create(1, new CurrencyCode("USD"), 0.1m);
         var product = Product.Create("Coffee", "COF-001", 10.0m, "USD", 1);
-        order.AddItem(product, 2);
+        order.AddItem(product.Id, product.Name, product.Price, 2);
 
         // Act
         order.RemoveItem(product.Id);
@@ -101,9 +102,9 @@ public class OrderUnitTests
     public void RemoveItem_WhenPendingAndItemDoesNotExist_DoesNothing()
     {
         // Arrange
-        var order = Domain.Orders.Order.Create(1, new CurrencyCode("USD"), 0.1m);
+        var order = Domain.Orders.Entities.Order.Create(1, new CurrencyCode("USD"), 0.1m);
         var product = Product.Create("Coffee", "COF-001", 10.0m, "USD", 1);
-        order.AddItem(product, 2);
+        order.AddItem(product.Id, product.Name, product.Price, 2);
         var initialSubtotal = order.Subtotal;
 
         // Act
@@ -118,9 +119,9 @@ public class OrderUnitTests
     public void RemoveItem_WhenStatusIsNotPending_ThrowsInvalidOperationException()
     {
         // Arrange
-        var order = Domain.Orders.Order.Create(1, new CurrencyCode("USD"), 0.1m);
+        var order = Domain.Orders.Entities.Order.Create(1, new CurrencyCode("USD"), 0.1m);
         var product = Product.Create("Coffee", "COF-001", 10.0m, "USD", 1);
-        order.AddItem(product, 2);
+        order.AddItem(product.Id, product.Name, product.Price, 2);
         order.UpdateStatus(OrderStatus.Confirmed);
 
         // Act & Assert
@@ -132,7 +133,7 @@ public class OrderUnitTests
     public void UpdateStatus_WithNewStatus_UpdatesStatusAndSetsUpdatedAt()
     {
         // Arrange
-        var order = Domain.Orders.Order.Create(1, new CurrencyCode("USD"), 0.1m);
+        var order = Domain.Orders.Entities.Order.Create(1, new CurrencyCode("USD"), 0.1m);
         var newStatus = OrderStatus.Confirmed;
 
         // Act
@@ -147,7 +148,7 @@ public class OrderUnitTests
     public void UpdateStatus_WithSameStatus_DoesNotUpdateStatusOrUpdatedAt()
     {
         // Arrange
-        var order = Domain.Orders.Order.Create(1, new CurrencyCode("USD"), 0.1m);
+        var order = Domain.Orders.Entities.Order.Create(1, new CurrencyCode("USD"), 0.1m);
         var initialUpdatedAt = order.UpdatedAt;
         var sameStatus = OrderStatus.Pending;
 

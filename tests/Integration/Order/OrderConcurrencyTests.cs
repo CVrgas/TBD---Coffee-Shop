@@ -6,10 +6,10 @@ using Application.Orders.Commands.CreateOrder;
 using Application.Orders.Dtos;
 using Domain.Catalog;
 using Domain.Inventory;
-using Domain.User;
+using Domain.Users.Entities;
+using Domain.Users.Enum;
 using Infrastructure.Persistence;
 using Integration.Common;
-using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 

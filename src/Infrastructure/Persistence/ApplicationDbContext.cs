@@ -1,14 +1,14 @@
 using System.Reflection;
-using Domain.Base;
+using Application.Common.Interfaces;
 using Domain.Catalog;
 using Domain.Inventory;
-using Domain.Orders;
-using Domain.User;
+using Domain.Orders.Entities;
+using Domain.Users.Entities;
 using Microsoft.EntityFrameworkCore;
 
 namespace Infrastructure.Persistence;
 
-public partial class ApplicationDbContext : DbContext
+public partial class ApplicationDbContext : DbContext, IAppDbContext
 {
     public ApplicationDbContext()
     {
@@ -24,6 +24,23 @@ public partial class ApplicationDbContext : DbContext
     public virtual DbSet<Order> Orders { get; set; }
     public virtual DbSet<OrderItem> OrderItems { get; set; }
     public virtual DbSet<PaymentRecord> PaymentRecords { get; set; }
+    
+    public async Task<TResult> ExecuteInTransactionAsync<TResult>(Func<CancellationToken, Task<TResult>> action, CancellationToken ct = default)
+    {
+        var strategy = Database.CreateExecutionStrategy();
+        
+        return await strategy.ExecuteAsync(async () =>
+        {
+            ChangeTracker.Clear();
+            
+            await using var transaction = await Database.BeginTransactionAsync(ct);
+            var result = await action(ct);
+
+            await SaveChangesAsync(ct);
+            await transaction.CommitAsync(ct);
+            return result;
+        });
+    }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

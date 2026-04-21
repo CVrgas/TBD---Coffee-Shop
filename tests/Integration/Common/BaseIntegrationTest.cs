@@ -1,9 +1,6 @@
 using System.Net.Http.Json;
-using Domain.User;
-using Infrastructure.Persistence;
-using Microsoft.EntityFrameworkCore;
+using Domain.Users.Enum;
 using Microsoft.Extensions.DependencyInjection;
-using Respawn;
 
 namespace Integration.Common;
 

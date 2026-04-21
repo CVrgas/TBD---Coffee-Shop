@@ -1,4 +1,4 @@
-using Domain.Orders;
+using Domain.Orders.Entities;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 

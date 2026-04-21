@@ -1,8 +1,4 @@
-using Application.Catalog.Interfaces;
-using Application.Common.Abstractions.Persistence;
-using Application.Common.Abstractions.Persistence.Repository;
 using Application.Common.Interfaces;
-using Domain.User;
 using Infrastructure.Authentication;
 using Infrastructure.Persistence;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
@@ -27,7 +23,8 @@ using Infrastructure.Security;
 using Polly;
 using Polly.Retry;
 using StackExchange.Redis;
-
+using Application.Common.Interfaces.Payment;
+using Infrastructure.Payment;
 namespace Infrastructure;
 
 public static class DependencyInjection
@@ -90,19 +87,16 @@ public static class DependencyInjection
         
         // Current user service
         services.AddHttpContextAccessor();
+        services.AddScoped<IAppDbContext,  ApplicationDbContext>();
         services.AddScoped<ICurrentUserService, CurrentUserService>();
-
-        services.AddScoped(typeof(IReadRepository<,>), typeof(Repository<,>));
-        services.AddScoped(typeof(IRepository<,>), typeof(Repository<,>));
         services.AddScoped<IJwtTokenGenerator, JwtTokenGenerator>();
         services.AddScoped(typeof(IPasswordHasher<>), typeof(PasswordHasher<>));
-        services.AddScoped<IUnitOfWork, UnitOfWork>();
         services.AddScoped<IIdempotencyProvider, RedisIdempotencyProvider>();
         services.AddScoped<IPasswordManager, IdentityPasswordManager>();
         services.AddScoped<IInventoryQueries, InventoryQueries>();
-        services.AddScoped<ICatalogQueries, CatalogQueries>();
         
         services.AddScoped<IDataSeeder, DataSeeder>();
+        services.AddScoped<IPaymentGateway, MockPaymentGateway>();
         
         services.AddOptions<JwtSettings>()
             .Bind(config.GetSection(JwtSettings.SectionName))
@@ -139,7 +133,6 @@ public static class DependencyInjection
         });
         services.AddAuthorization(opts =>
         {
-            // new Version
             foreach (var authPolicy in AuthorizationPolicy.ListOfPolicies())
             {
                 opts.AddPolicy(authPolicy.Name, policy => policy.RequireRole(authPolicy.RoleNames));
