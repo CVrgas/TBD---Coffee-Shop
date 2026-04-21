@@ -127,24 +127,18 @@ public class InventoryTests(IntegrationTestFactory factory) : BaseIntegrationTes
     }
 
     [Fact]
-    public async Task GetStockLevel_ProductWithNoStock_ReturnsZeroedLevel()
+    public async Task GetStockLevel_ProductWithNoStock_ReturnsNotFound()
     {
         var (_, userId) = await SeedAsync();
         SetUserContext(userId, UserRole.Admin);
         var nonExistentProductId = 99999;
 
         var response = await Client.GetAsync($"/api/v1/inventories/{nonExistentProductId}");
-        Assert.True(response.IsSuccessStatusCode, $"Expected success status code but got {(int)response.StatusCode} ({response.StatusCode}).");
-        var envelope = await response.Content.ReadFromJsonAsync<Envelope<StockLevelDto>>();
+        Assert.False(response.IsSuccessStatusCode, $"Expected 404 status code but got {(int)response.StatusCode} ({response.StatusCode}).");
+        var problem = await response.Content.ReadFromJsonAsync<ProblemDetails>();
 
-        Assert.NotNull(envelope);
-        Assert.True(envelope.IsSuccess);
-        Assert.NotNull(envelope.Data);
-        Assert.Equal(nonExistentProductId, envelope.Data.ProductId);
-        Assert.Equal(0, envelope.Data.QuantityInStock);
-        Assert.Equal(0, envelope.Data.ReservedQuantity);
-        Assert.Equal(0, envelope.Data.AvailableQuantity);
-        Assert.Empty(envelope.Data.LocationStockLevels);
+        Assert.NotNull(problem);
+        Assert.Equal((int)HttpStatusCode.NotFound, problem.Status);
     }
 
     #endregion
