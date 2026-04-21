@@ -1,4 +1,4 @@
-namespace Domain.Base;
+namespace Domain.Base.ValueObjects;
 
 public readonly record struct CurrencyCode
 {

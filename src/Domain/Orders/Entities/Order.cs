@@ -1,7 +1,8 @@
-using Domain.Base;
-using Domain.Catalog;
+using Domain.Base.Entities;
+using Domain.Base.Enum;
+using Domain.Base.ValueObjects;
 
-namespace Domain.Orders;
+namespace Domain.Orders.Entities;
 
 public class Order : EntityWithRowVersion<int>
 {
@@ -32,11 +33,11 @@ public class Order : EntityWithRowVersion<int>
     public DateTimeOffset? UpdatedAt { get; private set; }
     private readonly List<OrderItem> _orderItems = [];
     public IReadOnlyCollection<OrderItem> OrderItems => _orderItems.AsReadOnly();
-    public void AddItem(Product product, int quantity)
+    public void AddItem(int productId, string name, decimal price, int quantity)
     {
         if(Status != OrderStatus.Pending) throw new InvalidOperationException("Can only add items to pending orders.");
         
-        var existingItem = _orderItems.SingleOrDefault(i => i.ProductId == product.Id);
+        var existingItem = _orderItems.SingleOrDefault(i => i.ProductId == productId);
 
         if (existingItem is not null)
         {
@@ -44,7 +45,7 @@ public class Order : EntityWithRowVersion<int>
         }
         else
         {
-            _orderItems.Add(OrderItem.Create(this, product, quantity));
+            _orderItems.Add(OrderItem.Create(productId, name, price, quantity));
         }
 
         RecalculateTotals();

@@ -1,10 +1,11 @@
 using Application.Common;
 using Application.Common.Interfaces;
 using Application.Common.Interfaces.Security;
-using Domain.Base;
+using Domain.Base.Enum;
 using Domain.Catalog;
 using Domain.Inventory;
-using Domain.User;
+using Domain.Users.Entities;
+using Domain.Users.Enum;
 using Microsoft.EntityFrameworkCore;
 
 namespace Infrastructure.Persistence.Seeding;

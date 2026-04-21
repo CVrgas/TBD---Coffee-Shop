@@ -1,6 +1,8 @@
-using Domain.User;
+using Domain.Users.Entities;
+using Domain.Users.ValueObjects;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
+using EmailAddress = Domain.Users.ValueObjects.EmailAddress;
 
 namespace Infrastructure.Persistence.Configurations;
 

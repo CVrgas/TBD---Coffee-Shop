@@ -1,9 +1,9 @@
 using System.Reflection;
-using Domain.Base;
+using Application.Common.Interfaces;
 using Domain.Catalog;
 using Domain.Inventory;
-using Domain.Orders;
-using Domain.User;
+using Domain.Orders.Entities;
+using Domain.Users.Entities;
 using Microsoft.EntityFrameworkCore;
 
 namespace Infrastructure.Persistence;

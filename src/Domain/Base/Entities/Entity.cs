@@ -1,4 +1,4 @@
-namespace Domain.Base;
+namespace Domain.Base.Entities;
 
 public abstract class Entity<TKey> : IEntity<TKey> where TKey : notnull
 {

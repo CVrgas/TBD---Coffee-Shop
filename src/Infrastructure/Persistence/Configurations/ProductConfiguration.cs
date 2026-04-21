@@ -1,4 +1,4 @@
-using Domain.Base;
+using Domain.Base.ValueObjects;
 using Domain.Catalog;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;

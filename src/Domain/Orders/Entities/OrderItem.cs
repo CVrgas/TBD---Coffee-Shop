@@ -1,26 +1,24 @@
-using Domain.Base;
-using Domain.Catalog;
+using Domain.Base.Entities;
 
-namespace Domain.Orders;
+namespace Domain.Orders.Entities;
 
 public class OrderItem : Entity<int>
 {
     private OrderItem(){}
-    private OrderItem(Order order, Product product, int quantity)
+
+    public static OrderItem Create(int productId, string name, decimal price, int quantity)
     {
         if(quantity <= 0) throw new ArgumentOutOfRangeException(nameof(quantity), "Quantity must be greater than zero.");
         
-        Order = order;
-        ProductId = product.Id;
-        NameSnapshot = product.Name;
-        UnitPrice = product.Price;
-        Quantity = quantity;
-        CalculateLineTotal();
-    }
-
-    public static OrderItem Create(Order order, Product product, int quantity)
-    {
-        return new OrderItem(order, product, quantity);
+        var item = new OrderItem
+        {
+            ProductId = productId,
+            NameSnapshot = name,
+            UnitPrice = price,
+            Quantity = quantity,
+        };
+        item.CalculateLineTotal();
+        return item;
     }
     
     public int OrderId { get; private set;}  

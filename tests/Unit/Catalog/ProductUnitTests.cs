@@ -1,4 +1,4 @@
-using Domain.Base;
+using Domain.Base.ValueObjects;
 using Domain.Catalog;
 
 namespace Unit.Catalog;

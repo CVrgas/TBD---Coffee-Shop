@@ -1,4 +1,6 @@
-using Domain.User;
+using Domain.Users.Enum;
+using Domain.Users.ValueObjects;
+using EmailAddress = Domain.Users.ValueObjects.EmailAddress;
 
 namespace Unit.User;
 
@@ -60,7 +62,7 @@ public class UserUnitTests
     public void CreateCustomer_WithValidData_InstantiatesCustomerCorrectly()
     {
         var hash = new PasswordHash("hash123");
-        var user = Domain.User.User.CreateCustomer("John", "Doe", "john@example.com", hash);
+        var user = Domain.Users.Entities.User.CreateCustomer("John", "Doe", "john@example.com", hash);
 
         Assert.Equal("John", user.FirstName);
         Assert.Equal("Doe", user.LastName);
@@ -78,7 +80,7 @@ public class UserUnitTests
     public void CreateCustomer_WithInvalidNames_ThrowsArgumentNullException(string firstName, string lastName)
     {
         var hash = new PasswordHash("hash123");
-        Assert.Throws<ArgumentNullException>(() => Domain.User.User.CreateCustomer(firstName, lastName, "john@example.com", hash));
+        Assert.Throws<ArgumentNullException>(() => Domain.Users.Entities.User.CreateCustomer(firstName, lastName, "john@example.com", hash));
     }
 
     [Theory]
@@ -87,7 +89,7 @@ public class UserUnitTests
     public void CreateStaff_WithValidData_InstantiatesStaffCorrectly(UserRole role)
     {
         var hash = new PasswordHash("hash123");
-        var user = Domain.User.User.CreateStaff("Jane", "Smith", "jane@example.com", role, hash);
+        var user = Domain.Users.Entities.User.CreateStaff("Jane", "Smith", "jane@example.com", role, hash);
 
         Assert.Equal("Jane", user.FirstName);
         Assert.Equal("Smith", user.LastName);
@@ -102,13 +104,13 @@ public class UserUnitTests
     public void CreateStaff_WithInvalidRole_ThrowsArgumentException(UserRole role)
     {
         var hash = new PasswordHash("hash123");
-        Assert.Throws<ArgumentException>(() => Domain.User.User.CreateStaff("Jane", "Smith", "jane@example.com", role, hash));
+        Assert.Throws<ArgumentException>(() => Domain.Users.Entities.User.CreateStaff("Jane", "Smith", "jane@example.com", role, hash));
     }
 
     [Fact]
     public void UpdateProfile_WithValidData_UpdatesNamesAndSetsUpdatedAt()
     {
-        var user = Domain.User.User.CreateCustomer("John", "Doe", "john@example.com", new PasswordHash("hash123"));
+        var user = Domain.Users.Entities.User.CreateCustomer("John", "Doe", "john@example.com", new PasswordHash("hash123"));
         
         user.UpdateProfile("Johnny", "D");
 
@@ -122,7 +124,7 @@ public class UserUnitTests
     [InlineData("John", " ")]
     public void UpdateProfile_WithInvalidNames_ThrowsArgumentNullException(string firstName, string lastName)
     {
-        var user = Domain.User.User.CreateCustomer("John", "Doe", "john@example.com", new PasswordHash("hash123"));
+        var user = Domain.Users.Entities.User.CreateCustomer("John", "Doe", "john@example.com", new PasswordHash("hash123"));
         Assert.Throws<ArgumentNullException>(() => user.UpdateProfile(firstName, lastName));
     }
 
@@ -131,7 +133,7 @@ public class UserUnitTests
     {
         var oldHash = new PasswordHash("oldHash");
         var newHash = new PasswordHash("newHash");
-        var user = Domain.User.User.CreateCustomer("John", "Doe", "john@example.com", oldHash);
+        var user = Domain.Users.Entities.User.CreateCustomer("John", "Doe", "john@example.com", oldHash);
         var oldStamp = user.SecurityStamp;
 
         user.UpdatePassword(newHash);
@@ -145,7 +147,7 @@ public class UserUnitTests
     public void UpdatePassword_WithSameHash_ThrowsArgumentException()
     {
         var hash = new PasswordHash("sameHash");
-        var user = Domain.User.User.CreateCustomer("John", "Doe", "john@example.com", hash);
+        var user = Domain.Users.Entities.User.CreateCustomer("John", "Doe", "john@example.com", hash);
 
         Assert.Throws<ArgumentException>(() => user.UpdatePassword(new PasswordHash("sameHash")));
     }
@@ -153,7 +155,7 @@ public class UserUnitTests
     [Fact]
     public void Deactivate_SetsIsActiveToFalseAndRegeneratesSecurityStamp()
     {
-        var user = Domain.User.User.CreateCustomer("John", "Doe", "john@example.com", new PasswordHash("hash123"));
+        var user = Domain.Users.Entities.User.CreateCustomer("John", "Doe", "john@example.com", new PasswordHash("hash123"));
         var oldStamp = user.SecurityStamp;
 
         user.Deactivate();
@@ -166,7 +168,7 @@ public class UserUnitTests
     [Fact]
     public void Activate_SetsIsActiveToTrueAndSetsUpdatedAt()
     {
-        var user = Domain.User.User.CreateCustomer("John", "Doe", "john@example.com", new PasswordHash("hash123"));
+        var user = Domain.Users.Entities.User.CreateCustomer("John", "Doe", "john@example.com", new PasswordHash("hash123"));
         user.Deactivate();
 
         user.Activate();

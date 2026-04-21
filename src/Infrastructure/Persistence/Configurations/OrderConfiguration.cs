@@ -1,6 +1,5 @@
-using Domain.Base;
-using Domain.Catalog;
-using Domain.Orders;
+using Domain.Base.ValueObjects;
+using Domain.Orders.Entities;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 

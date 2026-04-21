@@ -1,6 +1,9 @@
 using Domain.Base;
+using Domain.Base.Entities;
+using Domain.Base.Enum;
+using Domain.Base.ValueObjects;
 
-namespace Domain.Orders;
+namespace Domain.Orders.Entities;
 
 public sealed class PaymentRecord : Entity<int>, IHasRowVersion
 {

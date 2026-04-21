@@ -1,8 +1,6 @@
-using System;
-using Domain.Base;
+using Domain.Base.ValueObjects;
 using Domain.Catalog;
-using Domain.Orders;
-using Xunit;
+using Domain.Orders.Entities;
 
 namespace Unit.Order;
 
@@ -15,10 +13,9 @@ public class OrderItemUnitTests
         // Arrange
         var product = Product.Create("Test Product", "TP-001", 10.50m, "USD", 1);
         const int quantity = 2;
-        var order = Domain.Orders.Order.Create(1, new CurrencyCode("USD"), 0.1m);
 
         // Act
-        var orderItem = OrderItem.Create(order, product, quantity);
+        var orderItem = OrderItem.Create(product.Id, product.Name, product.Price, quantity);
 
         // Assert
         Assert.Equal(product.Price * quantity, orderItem.LineTotal);
@@ -30,10 +27,9 @@ public class OrderItemUnitTests
         // Arrange
         var product = Product.Create("Test Product", "TP-001", 10.50m, "USD", 1);
         const int quantity = 0;
-        var order = Domain.Orders.Order.Create(1, new CurrencyCode("USD"), 0.1m);
 
         // Act & Assert
-        Assert.Throws<ArgumentOutOfRangeException>(() => OrderItem.Create(order, product, quantity));
+        Assert.Throws<ArgumentOutOfRangeException>(() => OrderItem.Create(product.Id, product.Name, product.Price, quantity));
     }
 
     [Fact]
@@ -42,10 +38,9 @@ public class OrderItemUnitTests
         // Arrange
         var product = Product.Create("Test Product", "TP-001", 10.50m, "USD", 1);
         var quantity = -1;
-        var order = Domain.Orders.Order.Create(1, new CurrencyCode("USD"), 0.1m);
 
         // Act & Assert
-        Assert.Throws<ArgumentOutOfRangeException>(() => OrderItem.Create(order, product, quantity));
+        Assert.Throws<ArgumentOutOfRangeException>(() => OrderItem.Create(product.Id, product.Name, product.Price, quantity));
     }
     
     // AddQuantity
@@ -54,8 +49,7 @@ public class OrderItemUnitTests
     {
         // Arrange
         var product = Product.Create("Test Product", "TP-001", 10.50m, "USD", 1);
-        var order = Domain.Orders.Order.Create(1, new CurrencyCode("USD"), 0.1m);
-        var orderItem = OrderItem.Create(order, product, 2);
+        var orderItem = OrderItem.Create(product.Id, product.Name, product.Price, 2);
         var quantityToAdd = 3;
         var expectedQuantity = 5;
         var expectedLineTotal = product.Price * expectedQuantity;
@@ -73,8 +67,7 @@ public class OrderItemUnitTests
     {
         // Arrange
         var product = Product.Create("Test Product", "TP-001", 10.50m, "USD", 1);
-        var order = Domain.Orders.Order.Create(1, new CurrencyCode("USD"), 0.1m);
-        var orderItem = OrderItem.Create(order, product, 2);
+        var orderItem = OrderItem.Create(product.Id, product.Name, product.Price, 2);
         var quantityToAdd = 0;
 
         // Act & Assert
@@ -86,8 +79,7 @@ public class OrderItemUnitTests
     {
         // Arrange
         var product = Product.Create("Test Product", "TP-001", 10.50m, "USD", 1);
-        var order = Domain.Orders.Order.Create(1, new CurrencyCode("USD"), 0.1m);
-        var orderItem = OrderItem.Create(order, product, 2);
+        var orderItem = OrderItem.Create(product.Id, product.Name, product.Price, 2);
         var quantityToAdd = -1;
 
         // Act & Assert

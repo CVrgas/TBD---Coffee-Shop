@@ -1,5 +1,6 @@
 using Application.Common.Interfaces.Security;
-using Domain.User;
+using Domain.Users.Entities;
+using Domain.Users.ValueObjects;
 using Microsoft.AspNetCore.Identity;
 
 namespace Infrastructure.Security;

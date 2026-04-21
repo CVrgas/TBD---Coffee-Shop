@@ -1,6 +1,6 @@
 using System.Text.RegularExpressions;
 
-namespace Domain.User;
+namespace Domain.Users.ValueObjects;
 
 public sealed partial record EmailAddress
 {

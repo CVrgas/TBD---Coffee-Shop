@@ -1,4 +1,5 @@
-using Domain.Base;
+using Domain.Base.Entities;
+using Domain.Base.Enum;
 
 namespace Domain.Inventory;
 

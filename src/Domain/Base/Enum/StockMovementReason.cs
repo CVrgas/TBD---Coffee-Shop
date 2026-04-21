@@ -1,4 +1,4 @@
-namespace Domain.Base;
+namespace Domain.Base.Enum;
 
 public enum StockMovementReason
 {

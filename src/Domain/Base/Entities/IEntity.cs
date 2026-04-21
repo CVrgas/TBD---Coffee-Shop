@@ -1,4 +1,4 @@
-namespace Domain.Base;
+namespace Domain.Base.Entities;
 
 public interface IEntity<TKey>
 {

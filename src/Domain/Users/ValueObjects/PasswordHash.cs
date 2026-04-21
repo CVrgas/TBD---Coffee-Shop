@@ -1,4 +1,4 @@
-namespace Domain.User;
+namespace Domain.Users.ValueObjects;
 
 public record PasswordHash
 {

@@ -1,12 +1,14 @@
-using Domain.Base;
+using Domain.Base.Entities;
+using Domain.Users.Enum;
+using Domain.Users.ValueObjects;
 
-namespace Domain.User;
+namespace Domain.Users.Entities;
 
 public sealed class User : Entity<int>
 {
     public string FirstName { get; private set; } 
     public string LastName { get; private set; }
-    public EmailAddress Email { get; private set; }
+    public ValueObjects.EmailAddress Email { get; private set; }
     public PasswordHash PasswordHash { get; private set; }
     public UserRole Role { get; private set; }
     public bool IsActive { get; private set; }
@@ -32,7 +34,7 @@ public sealed class User : Entity<int>
         {
             FirstName = firstName,
             LastName = lastName,
-            Email = new EmailAddress(email),
+            Email = new ValueObjects.EmailAddress(email),
             Role = UserRole.Customer,
             IsActive = true,
             CreatedAt = DateTimeOffset.UtcNow,
@@ -53,7 +55,7 @@ public sealed class User : Entity<int>
         {
             FirstName = firstName,
             LastName = lastName,
-            Email = new EmailAddress(email),
+            Email = new ValueObjects.EmailAddress(email),
             Role = role,
             IsActive = true,
             CreatedAt = DateTimeOffset.UtcNow,

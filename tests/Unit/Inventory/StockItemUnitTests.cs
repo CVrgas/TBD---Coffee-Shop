@@ -1,4 +1,4 @@
-using Domain.Base;
+using Domain.Base.Enum;
 using Domain.Inventory;
 
 namespace Unit.Inventory;

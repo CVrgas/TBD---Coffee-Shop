@@ -1,8 +1,4 @@
-using Application.Catalog.Interfaces;
-using Application.Common.Abstractions.Persistence;
-using Application.Common.Abstractions.Persistence.Repository;
 using Application.Common.Interfaces;
-using Domain.User;
 using Infrastructure.Authentication;
 using Infrastructure.Persistence;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
@@ -27,7 +23,8 @@ using Infrastructure.Security;
 using Polly;
 using Polly.Retry;
 using StackExchange.Redis;
-
+using Application.Common.Interfaces.Payment;
+using Infrastructure.Payment;
 namespace Infrastructure;
 
 public static class DependencyInjection

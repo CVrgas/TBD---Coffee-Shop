@@ -1,15 +1,18 @@
+using System.Net;
 using System.Net.Http.Json;
 using Application.Common;
 using Application.Common.Abstractions.Envelope;
 using Application.Common.Interfaces.Security;
 using Application.Inventory.Commands.AdjustStock;
 using Application.Inventory.Dtos;
-using Domain.Base;
+using Domain.Base.Enum;
 using Domain.Catalog;
 using Domain.Inventory;
-using Domain.User;
+using Domain.Users.Entities;
+using Domain.Users.Enum;
 using Infrastructure.Persistence;
 using Integration.Common;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 

@@ -1,8 +1,7 @@
-using Domain.User;
+using Domain.Users.Enum;
 
 namespace Infrastructure.Integration;
 
-// New version
 public class AuthorizationPolicy(string name, List<UserRole> roles)
 {
     public static readonly AuthorizationPolicy ElevatedRights = new("ElevatedRights", [UserRole.Admin, UserRole.Staff]);

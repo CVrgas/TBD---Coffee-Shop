@@ -1,4 +1,4 @@
-using Domain.Base;
+using Domain.Base.Entities;
 
 namespace Domain.Catalog;
 
