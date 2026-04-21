@@ -87,19 +87,16 @@ public static class DependencyInjection
         
         // Current user service
         services.AddHttpContextAccessor();
+        services.AddScoped<IAppDbContext,  ApplicationDbContext>();
         services.AddScoped<ICurrentUserService, CurrentUserService>();
-
-        services.AddScoped(typeof(IReadRepository<,>), typeof(Repository<,>));
-        services.AddScoped(typeof(IRepository<,>), typeof(Repository<,>));
         services.AddScoped<IJwtTokenGenerator, JwtTokenGenerator>();
         services.AddScoped(typeof(IPasswordHasher<>), typeof(PasswordHasher<>));
-        services.AddScoped<IUnitOfWork, UnitOfWork>();
         services.AddScoped<IIdempotencyProvider, RedisIdempotencyProvider>();
         services.AddScoped<IPasswordManager, IdentityPasswordManager>();
         services.AddScoped<IInventoryQueries, InventoryQueries>();
-        services.AddScoped<ICatalogQueries, CatalogQueries>();
         
         services.AddScoped<IDataSeeder, DataSeeder>();
+        services.AddScoped<IPaymentGateway, MockPaymentGateway>();
         
         services.AddOptions<JwtSettings>()
             .Bind(config.GetSection(JwtSettings.SectionName))
