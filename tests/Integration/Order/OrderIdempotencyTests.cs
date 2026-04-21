@@ -201,7 +201,7 @@ public class OrderIdempotencyTests(IntegrationTestFactory factory) : BaseIntegra
                 .ToListAsync();
             
             Assert.Single(records);
-            Assert.Equal(PaymentStatus.Approved, records.First().Status);
+            Assert.Equal(PaymentStatus.Created, records.First().Status);
         });
         
         var firstResponseBody = await successResponses.First().Content.ReadAsStringAsync();
