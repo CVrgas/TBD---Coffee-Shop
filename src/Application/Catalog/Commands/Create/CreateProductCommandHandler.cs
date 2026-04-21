@@ -1,30 +1,26 @@
-using Application.Auth.Specifications;
 using Application.Catalog.Dtos;
 using Application.Catalog.Mapping;
 using Application.Common;
 using Application.Common.Abstractions.Envelope;
-using Application.Common.Abstractions.Persistence;
-using Application.Common.Abstractions.Persistence.Repository;
+using Application.Common.Interfaces;
 using Domain.Catalog;
 using MediatR;
+using Microsoft.EntityFrameworkCore;
 
 namespace Application.Catalog.Commands.Create;
 
-public class CreateProductCommandHandler(
-    IRepository<Product, int> repository, 
-    IRepository<ProductCategory, int> categoryRepo,
-    IUnitOfWork uOw) : IRequestHandler<CreateProductCommand, Envelope<ProductDto>>
+public class CreateProductCommandHandler(IAppDbContext context) : IRequestHandler<CreateProductCommand, Envelope<ProductDto>>
 {
     public async Task<Envelope<ProductDto>> Handle(CreateProductCommand request, CancellationToken cancellationToken)
     {
-        return await uOw.ExecuteInTransactionAsync(async (_) =>
+        return await context.ExecuteInTransactionAsync(async (_) =>
         {
-            var exist = await repository.ExistsAsync(new ProductNameSpec(request.Name), ct: cancellationToken);
+            var exist = await context.Products.AnyAsync(p => p.Name == request.Name, cancellationToken: cancellationToken);
             if (exist)
                 return Envelope<ProductDto>.BadRequest()
                     .WithError(nameof(request.Name), "Product name already exists");
-
-            var category = await categoryRepo.GetByIdAsync(id: request.CategoryId, ct: cancellationToken);
+            
+            var category = await context.ProductCategories.FirstOrDefaultAsync(c => c.Id == request.CategoryId, cancellationToken: cancellationToken);
 
             if (category is null)
                 return Envelope<ProductDto>.BadRequest("Category does not exist")
@@ -40,8 +36,8 @@ public class CreateProductCommandHandler(
                 categoryId: request.CategoryId
             );
 
-            await repository.Create(entity);
-            await uOw.SaveChangesAsync(cancellationToken);
+            await context.Products.AddAsync(entity, cancellationToken);
+            await context.SaveChangesAsync(cancellationToken);
             return Envelope<ProductDto>.Ok(entity.ToDto() with { CategoryName = category.Name });
         }, cancellationToken);
     }
