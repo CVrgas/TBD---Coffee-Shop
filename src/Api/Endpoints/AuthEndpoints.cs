@@ -1,13 +1,11 @@
 using Api.Middlewares;
 using Application.Auth.Commands.Login;
 using Application.Auth.Commands.Register;
-using Application.Auth.Dtos;
-using Application.Auth.Interfaces;
+using Application.Auth.Queries.GetMe;
 using MediatR;
 using Microsoft.AspNetCore.Mvc;
-using RegisterRequest = Application.Auth.Dtos.RegisterRequest;
 
-namespace Api.Modules.Auth;
+namespace Api.Endpoints;
 
 /// <summary>
 /// Defines the endpoints for authentication operations.
@@ -36,8 +34,8 @@ public static class AuthEndpoints
             .WithSummary("User Login")
             .WithName("Login");
 
-        group.MapGet("/me", async ([FromServices] IAuthQueryService authService) =>
-                await authService.GetMe())
+        group.MapGet("/me", async ([FromServices] ISender sender, CancellationToken cancellationToken = default) =>
+                await sender.Send(new GetMeQuery(), cancellationToken))
             .RequireAuthorization()
             .WithSummary("Get Me")
             .WithName("GetMe");

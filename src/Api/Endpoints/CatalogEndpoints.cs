@@ -5,24 +5,22 @@ using Application.Catalog.Commands.Rate;
 using Application.Catalog.Commands.ToggleStatus;
 using Application.Catalog.Commands.Update;
 using Application.Catalog.Commands.UpdatePrice;
-using Application.Catalog.Dtos;
-using Application.Catalog.Interfaces;
-using Application.Common.Abstractions.Envelope;
-using Application.Common.Abstractions.Persistence;
+using Application.Catalog.Queries.GetProductById;
+using Application.Catalog.Queries.GetProductBySku;
+using Application.Catalog.Queries.GetProductsPaginated;
+using Application.Catalog.Queries.GetProductStockItems;
 using Application.Common.Abstractions.Persistence.Paginated;
-using Application.Inventory.Dtos;
-using Domain.User;
 using Infrastructure.Caching;
 using Infrastructure.Integration;
 using MediatR;
 using Microsoft.AspNetCore.Mvc;
 
-namespace Api.Modules.Catalog;
+namespace Api.Endpoints;
 
 /// <summary>
 /// Defines the endpoints for product operations.
 /// </summary>
-public static class ProductEndpoints
+public static class CatalogEndpoints
 {
     /// <summary>
     /// Maps the product endpoints to the application's request pipeline.
@@ -34,10 +32,10 @@ public static class ProductEndpoints
         var group = endpoints.MapGroup("/products")
             .WithTags("Products");
         
-        group.MapGet("/", async ([AsParameters] PaginatedRequest req, IProductQueryService service) =>
+        group.MapGet("/", async ([AsParameters] PaginatedRequest req, [FromServices] ISender sender, CancellationToken cancellationToken = default) =>
             {
-                var result = await service.PaginatedAsync(request: req);
-                return Envelope<Paginated<ProductDto>>.Ok(result);
+                var result = await sender.Send(new GetProductsPaginatedQuery(req), cancellationToken);
+                return result;
             })
             .CacheOutput(CachePolicy.Catalog.Name)
             .WithSummary("Get all products paginated");
@@ -78,26 +76,26 @@ public static class ProductEndpoints
             .InvalidateCacheTag(CachePolicy.Catalog.Name)
             .WithSummary("Submit a user rating for a product");
 
-        group.MapGet("{id:int}", async (int id, IProductQueryService service) =>
+        group.MapGet("{id:int}", async (int id, [FromServices] ISender sender, CancellationToken cancellationToken = default) =>
             {
-                var result = await service.GetByIdAsync(id);
-                return result is null ? Envelope<ProductDto>.NotFound() : Envelope<ProductDto>.Ok(result);
+                var result = await sender.Send(new GetProductByIdQuery(id), cancellationToken);
+                return result;
             })
             .CacheOutput(CachePolicy.Catalog.Name)
             .WithSummary("Get product by its ID");
         
-        group.MapGet("{sku}", async (string sku, IProductQueryService service) =>
+        group.MapGet("{sku}", async (string sku, [FromServices] ISender sender, CancellationToken cancellationToken = default) =>
             {
-                var result = await service.GetBySkuAsync(sku);
-                return result is null ? Envelope<ProductDto>.NotFound() : Envelope<ProductDto>.Ok(result);
+                var result = await sender.Send(new GetProductBySkuQuery(sku), cancellationToken);
+                return result;
             })
             .CacheOutput(CachePolicy.Catalog.Name)
             .WithSummary("Get product by Sku");
         
-        group.MapGet("list/{id:int}", async (int id, ICatalogQueries service) =>
+        group.MapGet("list/{id:int}", async (int id, [FromServices] ISender sender, CancellationToken cancellationToken = default) =>
             {
-                var list = await service.GetStockItemsAsync(id);
-                return Envelope<List<StockItemDto>>.Ok(list);
+                var result = await sender.Send(new GetProductStockItemsQuery(id), cancellationToken);
+                return result;
             })
             .WithSummary("Get Stock Item");
 

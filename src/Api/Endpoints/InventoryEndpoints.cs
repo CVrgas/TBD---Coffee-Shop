@@ -1,12 +1,12 @@
 using Api.Common.Idempotency;
 using Api.Middlewares;
 using Application.Inventory.Commands.AdjustStock;
-using Application.Inventory.Commands.GetStockLevel;
+using Application.Inventory.Queries.GetStockLevel;
 using Infrastructure.Caching;
 using Infrastructure.Integration;
 using MediatR;
 
-namespace Api.Modules.Inventory;
+namespace Api.Endpoints;
 
 /// <summary>
 /// Defines the endpoints for inventory operations.
@@ -25,7 +25,7 @@ public static class InventoryEndpoints
             .WithTags("Inventory");
         
         group.MapGet("/{productId:int}", async (int productId, ISender sender, CancellationToken cancellationToken = default) => 
-                await sender.Send(new GetStockLevelCommand(productId), cancellationToken))
+                await sender.Send(new GetStockLevelQuery(productId), cancellationToken))
             .CacheOutput(CachePolicy.Inventory.Name)
             .WithSummary("Get Stock Level");
 

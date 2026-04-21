@@ -5,7 +5,7 @@ using Application.Payments.Commands.CreatePaymentIntent;
 using MediatR;
 using Microsoft.AspNetCore.Mvc;
 
-namespace Api.Modules.Payment;
+namespace Api.Endpoints;
 
 /// <summary>
 /// Defines the endpoints for payment operations.

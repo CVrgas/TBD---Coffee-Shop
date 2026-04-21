@@ -2,12 +2,12 @@ using Api.Common.Idempotency;
 using Api.Middlewares;
 using Application.Orders.Commands.CancelOrder;
 using Application.Orders.Commands.CreateOrder;
-using Application.Orders.Commands.GetOrderById;
-using Application.Orders.Commands.GetPaginatedOrder;
+using Application.Orders.Queries.GetOrderByNumber;
+using Application.Orders.Queries.GetPaginatedOrder;
 using MediatR;
 using Microsoft.AspNetCore.Mvc;
 
-namespace Api.Modules.Order;
+namespace Api.Endpoints;
 
 /// <summary>
 /// Defines the endpoints for order operations.
@@ -37,7 +37,7 @@ public static class OrderEndpoints
             .WithSummary("Create a new order and reserve stock synchronously");
         
         group.MapGet("/{orderNumber}", async (string orderNumber, int orderId,[FromServices] ISender sender, CancellationToken cancellationToken = default) => 
-            await sender.Send(new GetOrderByNumberCommand(orderNumber), cancellationToken))
+            await sender.Send(new GetOrderByNumberQuery(orderNumber), cancellationToken))
             .WithSummary("Get Order");
 
         group.MapPost("/{orderNumber}/cancel", async (string orderNumber, [FromServices] ISender sender, CancellationToken cancellationToken = default) => 

@@ -1,14 +1,13 @@
 using Api.Middlewares;
 using Application.Catalog.Commands.CreateCategory;
-using Application.Catalog.Dtos;
-using Application.Catalog.Interfaces;
-using Application.Common.Abstractions.Envelope;
-using Application.Common.Abstractions.Persistence;
+using Application.Catalog.Queries.GetCategoriesPaginated;
+using Application.Catalog.Queries.GetCategoryById;
+using Application.Catalog.Queries.GetCategoryBySlug;
 using Application.Common.Abstractions.Persistence.Paginated;
 using MediatR;
 using Microsoft.AspNetCore.Mvc;
 
-namespace Api.Modules.Catalog;
+namespace Api.Endpoints;
 
 /// <summary>
 /// Defines the endpoints for product category operations.
@@ -26,8 +25,8 @@ public static class ProductCategoryEndpoints
             .RequireAuthorization()
             .WithTags("ProductCategory");
 
-        group.MapGet("/", async ([AsParameters] PaginatedRequest req, ICategoryQueryService svc) =>
-            Envelope<Paginated<ProductCategoryDto>>.Ok(await svc.GetAllAsync(req)))
+        group.MapGet("/", async ([AsParameters] PaginatedRequest req, [FromServices] ISender sender, CancellationToken cancellationToken = default) =>
+            await sender.Send(new GetCategoriesPaginatedQuery(req), cancellationToken))
             .AddEndpointFilter(new ValidationFilter<PaginatedRequest>());
 
         group.MapPost("/", async ([FromBody] CreateCategoryCommand req, [FromServices] ISender sender, CancellationToken cancellationToken = default) => 
@@ -35,16 +34,14 @@ public static class ProductCategoryEndpoints
             .RequireAuthorization()
             .AddEndpointFilter(new ValidationFilter<CreateCategoryCommand>());
         
-        group.MapGet("/{id:int}", async (int id, ICategoryQueryService svc) =>
+        group.MapGet("/{id:int}", async (int id, [FromServices] ISender sender, CancellationToken cancellationToken = default) =>
         {
-            var category = await svc.GetByIdAsync(id);
-            return category == null ? Envelope<ProductCategoryDto>.NotFound() : Envelope<ProductCategoryDto>.Ok(category);
+            return await sender.Send(new GetCategoryByIdQuery(id), cancellationToken);
         });
         
-        group.MapGet("/{slug}", async (string slug, ICategoryQueryService svc) =>
+        group.MapGet("/{slug}", async (string slug, [FromServices] ISender sender, CancellationToken cancellationToken = default) =>
         {
-            var category = await svc.GetBySlugAsync(slug);
-            return category == null ? Envelope<ProductCategoryDto>.NotFound() : Envelope<ProductCategoryDto>.Ok(category);
+            return await sender.Send(new GetCategoryBySlugQuery(slug), cancellationToken);
         });
         
         return endpoints;
