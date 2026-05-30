@@ -6,12 +6,13 @@ public class OrderItem : Entity<int>
 {
     private OrderItem(){}
 
-    public static OrderItem Create(int productId, string name, decimal price, int quantity)
+    public static OrderItem Create(int orderId, int productId, string name, decimal price, int quantity)
     {
         if(quantity <= 0) throw new ArgumentOutOfRangeException(nameof(quantity), "Quantity must be greater than zero.");
         
         var item = new OrderItem
         {
+            OrderId = orderId,
             ProductId = productId,
             NameSnapshot = name,
             UnitPrice = price,

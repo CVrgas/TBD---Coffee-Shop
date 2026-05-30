@@ -1,6 +1,7 @@
 using Domain.Base.Entities;
 using Domain.Base.Enum;
 using Domain.Base.ValueObjects;
+using Domain.Orders.Events;
 
 namespace Domain.Orders.Entities;
 
@@ -10,15 +11,20 @@ public class Order : EntityWithRowVersion<int>
     
     public static Order Create(int userId, CurrencyCode currency, decimal taxPercentage)
     {
-        return new Order
+        var order = new Order
         {
             UserId = userId,
             Currency = currency,
             Status = OrderStatus.Pending,
             TaxPercentage = taxPercentage,
-            CreatedAt = DateTime.UtcNow,
-            OrderNumber = $"{DateTime.UtcNow.Year}-{Guid.NewGuid().ToString()[..8].ToUpper()}",
+            CreatedAt = DateTimeOffset.UtcNow,
+            OrderNumber = $"{DateTimeOffset.UtcNow.Year}-{Guid.NewGuid().ToString()[..8].ToUpper()}",
         };
+
+        order.RaiseDomainEvent(new OrderCreatedEvent(
+            order.Id, order.OrderNumber, order.UserId, order.Total, order.CreatedAt));
+
+        return order;
     }
     
     public string OrderNumber { get; private set; } = null!;
@@ -29,7 +35,7 @@ public class Order : EntityWithRowVersion<int>
     public decimal TaxPercentage { get; private set; }
     public decimal Total { get; private set; }
     public CurrencyCode Currency { get; private set; }
-    public DateTimeOffset CreatedAt { get; private set; } = DateTime.UtcNow;
+    public DateTimeOffset CreatedAt { get; private set; } = DateTimeOffset.UtcNow;
     public DateTimeOffset? UpdatedAt { get; private set; }
     private readonly List<OrderItem> _orderItems = [];
     public IReadOnlyCollection<OrderItem> OrderItems => _orderItems.AsReadOnly();
@@ -45,7 +51,7 @@ public class Order : EntityWithRowVersion<int>
         }
         else
         {
-            _orderItems.Add(OrderItem.Create(productId, name, price, quantity));
+            _orderItems.Add(OrderItem.Create(Id, productId, name, price, quantity));
         }
 
         RecalculateTotals();
@@ -64,13 +70,13 @@ public class Order : EntityWithRowVersion<int>
     {
         if(Status == status) return;
         Status = status;
-        UpdatedAt = DateTime.UtcNow;
+        UpdatedAt = DateTimeOffset.UtcNow;
     }
     private void RecalculateTotals()
     {
         Subtotal = _orderItems.Sum(i => i.LineTotal);
         Tax = Subtotal * TaxPercentage;
         Total = Subtotal + Tax;
-        UpdatedAt = DateTime.UtcNow;
+        UpdatedAt = DateTimeOffset.UtcNow;
     }
 }
