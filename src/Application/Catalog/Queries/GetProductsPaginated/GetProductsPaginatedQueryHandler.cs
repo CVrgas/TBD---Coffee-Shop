@@ -1,7 +1,6 @@
 using Application.Catalog.Dtos;
 using Application.Common.Abstractions.Envelope;
 using Application.Common.Abstractions.Persistence;
-using Application.Common.Abstractions.Persistence.Paginated;
 using Application.Common.Extensions;
 using Application.Common.Interfaces;
 using Application.Inventory.Abstractions;
@@ -17,7 +16,7 @@ public class GetProductsPaginatedQueryHandler(IAppDbContext context, IInventoryQ
         var queryable = context.Products.AsNoTracking()
             .Where(c =>
                 (!request.Request.OnlyActive.HasValue || request.Request.OnlyActive.Value == c.IsActive)  &&
-                (string.IsNullOrWhiteSpace(request.Request.QueryPattern) || c.Name.Contains(request.Request.QueryPattern)))
+                (string.IsNullOrWhiteSpace(request.Request.QueryPattern) || (EF.Functions.Like(c.Name, request.Request.QueryPattern) || EF.Functions.Like(c.Sku, request.Request.QueryPattern))))
             .ApplySort(request.Request.SortOption);
         
         var totalCount = await queryable.CountAsync(cancellationToken);

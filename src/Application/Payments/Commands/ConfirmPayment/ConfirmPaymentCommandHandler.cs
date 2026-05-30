@@ -1,13 +1,14 @@
 using Application.Common.Abstractions.Envelope;
 using Application.Common.Interfaces;
 using Application.Common.Interfaces.Payment;
+using Application.Inventory.Commands.ConsumeOrderStock;
 using Domain.Base.Enum;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 
 namespace Application.Payments.Commands.ConfirmPayment;
 
-internal sealed class ConfirmPaymentCommandHandler(IAppDbContext context, IPaymentGateway gateway) : IRequestHandler<ConfirmPaymentCommand, Envelope>
+internal sealed class ConfirmPaymentCommandHandler(IAppDbContext context, IPaymentGateway gateway, IMediator mediator) : IRequestHandler<ConfirmPaymentCommand, Envelope>
 {
     public async Task<Envelope> Handle(ConfirmPaymentCommand request, CancellationToken cancellationToken)
     {
@@ -15,6 +16,7 @@ internal sealed class ConfirmPaymentCommandHandler(IAppDbContext context, IPayme
         {
             var paymentRecord = await context.PaymentRecords
                 .Where(pr => pr.IntentId == request.IntentId)
+                .OrderBy(pr => pr.OrderId)
                 .FirstOrDefaultAsync(ct);
             
             if (paymentRecord is null) 
@@ -24,6 +26,7 @@ internal sealed class ConfirmPaymentCommandHandler(IAppDbContext context, IPayme
                 return Envelope.BadRequest("Payment is not in a confirmable state.");
 
             var order = await context.Orders
+                .Include(o => o.OrderItems)
                 .Where(o => o.Id == paymentRecord.OrderId)
                 .FirstOrDefaultAsync(ct);
             
@@ -47,6 +50,13 @@ internal sealed class ConfirmPaymentCommandHandler(IAppDbContext context, IPayme
                 if (totalPaid >= order.Total)
                 {
                     order.UpdateStatus(OrderStatus.Confirmed);
+                    
+                    // Right now is async execution.
+                    // TODO: implement Outbox.
+                    var stockCommand = new ConsumeOrderStockCommand(order.Id.ToString(), order.OrderItems.ToDictionary(oi => oi.ProductId, oi => oi.Quantity));
+                    var response = await mediator.Send(stockCommand, ct);
+                    if(!response.IsSuccess) return Envelope.BadRequest("Payment confirmed but failed to reserve stock.");
+                    
                     context.Orders.Update(order);
                 }
             }
