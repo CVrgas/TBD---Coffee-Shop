@@ -3,7 +3,6 @@ using Application.Auth.Dtos;
 using Application.Common.Abstractions.Envelope;
 using Application.Common.Interfaces;
 using Application.Common.Interfaces.Security;
-using Domain.Users;
 using Domain.Users.Entities;
 using Domain.Users.ValueObjects;
 using MediatR;
@@ -22,7 +21,8 @@ public class LoginCommandHandler(
     {
         var watch = Stopwatch.StartNew();
         var email = new EmailAddress(request.Email);
-        var user = await context.Users.Where(u => u.Email == email).FirstOrDefaultAsync(cancellationToken: cancellationToken);
+        var user = await context.Users.FirstOrDefaultAsync(u => u.Email == email, cancellationToken);
+        
         var userExist = user is not null;
         var hashToVerify = userExist ? user!.PasswordHash : hasher.HashPassword(DummyPassword);
         var userToVerify = user ?? User.CreateCustomer("dummy", "dummy", "dummy@dummy.com", hashToVerify);
@@ -35,8 +35,15 @@ public class LoginCommandHandler(
         }
             
         var (authToken, expirationIn) = generator.GenerateJwtToken(user!);
+        var (refreshTokenStr, refreshTokenHash, refreshExp) = generator.GenerateRefreshToken();
+        
+        var refreshTokenEntity = RefreshToken.Create(user!.Id, refreshTokenHash, refreshExp);
+        context.RefreshTokens.Add(refreshTokenEntity);
+        await context.SaveChangesAsync(cancellationToken);
+
         await ApplySecurityDelay(watch.ElapsedMilliseconds, cancellationToken);
-        return Envelope<AuthResult>.Ok(new AuthResult(authToken, expirationIn));
+        
+        return Envelope<AuthResult>.Ok(new AuthResult(authToken, expirationIn, refreshTokenStr));
     }
     
     private static async Task ApplySecurityDelay(long time, CancellationToken ct)

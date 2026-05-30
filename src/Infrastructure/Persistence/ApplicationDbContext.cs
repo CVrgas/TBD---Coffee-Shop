@@ -21,6 +21,7 @@ public partial class ApplicationDbContext : DbContext, IAppDbContext
     public virtual DbSet<StockItem> StockItems { get; set; }
     public virtual DbSet<StockMovement> StockMovements { get; set; }
     public virtual DbSet<User> Users { get; set; }
+    public DbSet<RefreshToken> RefreshTokens { get; set; }
     public virtual DbSet<Order> Orders { get; set; }
     public virtual DbSet<OrderItem> OrderItems { get; set; }
     public virtual DbSet<PaymentRecord> PaymentRecords { get; set; }
