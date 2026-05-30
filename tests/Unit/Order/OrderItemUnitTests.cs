@@ -15,7 +15,7 @@ public class OrderItemUnitTests
         const int quantity = 2;
 
         // Act
-        var orderItem = OrderItem.Create(product.Id, product.Name, product.Price, quantity);
+        var orderItem = OrderItem.Create(1, product.Id, product.Name, product.Price, quantity);
 
         // Assert
         Assert.Equal(product.Price * quantity, orderItem.LineTotal);
@@ -29,7 +29,7 @@ public class OrderItemUnitTests
         const int quantity = 0;
 
         // Act & Assert
-        Assert.Throws<ArgumentOutOfRangeException>(() => OrderItem.Create(product.Id, product.Name, product.Price, quantity));
+        Assert.Throws<ArgumentOutOfRangeException>(() => OrderItem.Create(1, product.Id, product.Name, product.Price, quantity));
     }
 
     [Fact]
@@ -40,7 +40,7 @@ public class OrderItemUnitTests
         var quantity = -1;
 
         // Act & Assert
-        Assert.Throws<ArgumentOutOfRangeException>(() => OrderItem.Create(product.Id, product.Name, product.Price, quantity));
+        Assert.Throws<ArgumentOutOfRangeException>(() => OrderItem.Create(1, product.Id, product.Name, product.Price, quantity));
     }
     
     // AddQuantity
@@ -49,7 +49,7 @@ public class OrderItemUnitTests
     {
         // Arrange
         var product = Product.Create("Test Product", "TP-001", 10.50m, "USD", 1);
-        var orderItem = OrderItem.Create(product.Id, product.Name, product.Price, 2);
+        var orderItem = OrderItem.Create(1, product.Id, product.Name, product.Price, 2);
         var quantityToAdd = 3;
         var expectedQuantity = 5;
         var expectedLineTotal = product.Price * expectedQuantity;
@@ -67,7 +67,7 @@ public class OrderItemUnitTests
     {
         // Arrange
         var product = Product.Create("Test Product", "TP-001", 10.50m, "USD", 1);
-        var orderItem = OrderItem.Create(product.Id, product.Name, product.Price, 2);
+        var orderItem = OrderItem.Create(1, product.Id, product.Name, product.Price, 2);
         var quantityToAdd = 0;
 
         // Act & Assert
@@ -79,7 +79,7 @@ public class OrderItemUnitTests
     {
         // Arrange
         var product = Product.Create("Test Product", "TP-001", 10.50m, "USD", 1);
-        var orderItem = OrderItem.Create(product.Id, product.Name, product.Price, 2);
+        var orderItem = OrderItem.Create(1, product.Id, product.Name, product.Price, 2);
         var quantityToAdd = -1;
 
         // Act & Assert
