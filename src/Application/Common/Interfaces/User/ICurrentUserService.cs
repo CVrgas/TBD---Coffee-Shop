@@ -1,5 +1,4 @@
-using Domain.Base;
-using Domain.User;
+using Domain.Users.Enum;
 
 namespace Application.Common.Interfaces.User;
 

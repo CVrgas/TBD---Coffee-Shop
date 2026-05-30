@@ -1,5 +1,5 @@
 using Application.Common.Abstractions.Envelope;
-using Domain.Base;
+using Domain.Base.Enum;
 using MediatR;
 
 namespace Application.Inventory.Commands.AdjustStock;

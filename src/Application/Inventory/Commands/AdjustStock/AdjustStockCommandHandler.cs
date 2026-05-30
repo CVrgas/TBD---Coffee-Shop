@@ -1,26 +1,20 @@
 using Application.Common.Abstractions.Envelope;
-using Application.Common.Abstractions.Persistence;
-using Application.Common.Abstractions.Persistence.Repository;
-using Application.Common.Interfaces.User;
-using Application.Inventory.Specifications;
-using Domain.Inventory;
-using Domain.User;
+using Application.Common.Interfaces;
 using MediatR;
-using Microsoft.Extensions.Logging;
+using Microsoft.EntityFrameworkCore;
 
 namespace Application.Inventory.Commands.AdjustStock;
 
-public class AdjustStockCommandHandler(IRepository<StockItem, int> stockRepository, IUnitOfWork uOw) 
-    : IRequestHandler<AdjustStockCommand, Envelope>
+public class AdjustStockCommandHandler(IAppDbContext context) : IRequestHandler<AdjustStockCommand, Envelope>
 {
     public async Task<Envelope> Handle(AdjustStockCommand request, CancellationToken cancellationToken)
     {
-        var item = await stockRepository.GetAsync(new AdjustSpec(request.ProductId), asNoTracking: false, ct: cancellationToken);
+        var item = await context.StockItems.FirstOrDefaultAsync(s => s.IsActive && s.ProductId == request.ProductId, cancellationToken: cancellationToken);
         if(item == null) return Envelope.NotFound("No stock for this item found");
 
         item.AdjustStock(request.Delta, reference: request.ReferenceId);
             
-        await uOw.SaveChangesAsync(cancellationToken);
+        await context.SaveChangesAsync(cancellationToken);
         return Envelope.Ok();
     }
 }

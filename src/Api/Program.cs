@@ -1,11 +1,7 @@
 using Api.Common;
 using Api.Configuration;
+using Api.Endpoints;
 using Api.Middlewares;
-using Api.Modules.Auth;
-using Api.Modules.Catalog;
-using Api.Modules.Inventory;
-using Api.Modules.Order;
-using Api.Modules.Payment;
 using Application;
 using Asp.Versioning;
 using Infrastructure;
@@ -70,13 +66,6 @@ builder.Services.AddSwaggerGen(c =>
 
 builder.Services.AddInfrastructure(builder.Configuration);
 builder.Services.AddApplication();
-
-builder.Services.AddCatalog();
-builder.Services.AddProductCategory();
-builder.Services.AddInventory();
-builder.Services.AddAuth();
-builder.Services.AddOrder();
-builder.Services.AddPayment();
 
 var app = builder.Build();
 

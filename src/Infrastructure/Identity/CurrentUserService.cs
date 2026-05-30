@@ -1,6 +1,6 @@
 using System.Security.Claims;
 using Application.Common.Interfaces.User;
-using Domain.User;
+using Domain.Users.Enum;
 using Microsoft.AspNetCore.Http;
 
 namespace Infrastructure.Identity;

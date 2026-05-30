@@ -1,42 +1,42 @@
 using Application.Catalog.Dtos;
 using Application.Catalog.Mapping;
-using Application.Catalog.Specifications;
 using Application.Common;
 using Application.Common.Abstractions.Envelope;
-using Application.Common.Abstractions.Persistence;
-using Application.Common.Abstractions.Persistence.Repository;
+using Application.Common.Interfaces;
 using Domain.Catalog;
 using MediatR;
+using Microsoft.EntityFrameworkCore;
 
 namespace Application.Catalog.Commands.CreateCategory;
 
-public class CreateCategoryCommandHandler(
-    IRepository<ProductCategory, int> repository,
-    IUnitOfWork uoW) 
-    : IRequestHandler<CreateCategoryCommand,  Envelope<ProductCategoryDto>>
+public class CreateCategoryCommandHandler(IAppDbContext context) : IRequestHandler<CreateCategoryCommand,  Envelope<ProductCategoryDto>>
 {
     public async Task<Envelope<ProductCategoryDto>> Handle(CreateCategoryCommand request, CancellationToken cancellationToken)
     {
-        return await uoW.ExecuteInTransactionAsync(async _ =>
+        return await context.ExecuteInTransactionAsync(async _ =>
         {
+            if(string.IsNullOrWhiteSpace(request.Code)) return Envelope<ProductCategoryDto>.BadRequest()
+                .WithError(nameof(request.Code), "Category Code is required.");
+            
             var name = request.Name!.Trim();
             var slug = name.Slugify();
 
-            if (request.ParentId.HasValue)
+            var x = await context.ProductCategories
+                .Where(c => 
+                    (!request.ParentId.HasValue || c.Id == request.ParentId.Value) 
+                    && c.Slug == slug)
+                .ToDictionaryAsync(c => c.Id, c => new { c.IsActive, c.Slug }, cancellationToken);
+            
+            if (request.ParentId.HasValue && x.TryGetValue(request.ParentId.Value, out var sl) && !sl.IsActive)
             {
-                var parent = await repository.GetByIdAsync(request.ParentId.Value, ct: cancellationToken);
-                if (parent is null || !parent.IsActive) 
-                    return Envelope<ProductCategoryDto>.BadRequest()
-                        .WithError(nameof(request.ParentId), "category not found or inactive.");
-            }
-            
-            var exist = await repository.ExistsAsync(new CategoriesSlugsSpec([slug]), ct: cancellationToken);
-            if (exist) 
                 return Envelope<ProductCategoryDto>.BadRequest()
-                    .WithError(nameof(request.ParentId), "Category already exists.");
-            
-            if(string.IsNullOrWhiteSpace(request.Code)) return Envelope<ProductCategoryDto>.BadRequest()
-                .WithError(nameof(request.Code), "Category Code is required.");
+                    .WithError(nameof(request.ParentId), "Parent category is inactive.");
+            }
+            if (x.Any(c => c.Value.Slug == slug))
+            {
+                return Envelope<ProductCategoryDto>.BadRequest()
+                    .WithError(nameof(request.Name), "Category name already exists.");
+            }
 
             var newCategory = ProductCategory.Create(
                 name,
@@ -46,7 +46,8 @@ public class CreateCategoryCommandHandler(
                 parentId: request.ParentId
             );
             
-            await repository.Create(newCategory);
+            await context.ProductCategories.AddAsync(newCategory, cancellationToken);
+            await context.SaveChangesAsync(cancellationToken);
             return Envelope<ProductCategoryDto>.Ok(newCategory.ToDto());
         }, cancellationToken);
     }

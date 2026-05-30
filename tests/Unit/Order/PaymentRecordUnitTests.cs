@@ -1,5 +1,6 @@
-using Domain.Base;
-using Domain.Orders;
+using Domain.Base.Enum;
+using Domain.Base.ValueObjects;
+using Domain.Orders.Entities;
 
 namespace Unit.Order;
 

@@ -1,25 +1,21 @@
 using Application.Common.Abstractions.Envelope;
-using Application.Common.Abstractions.Persistence;
-using Application.Common.Abstractions.Persistence.Repository;
+using Application.Common.Interfaces;
 using Application.Common.Interfaces.Payment;
-using Application.Payments.Specifications;
-using Domain.Base;
-using Domain.Orders;
+using Domain.Base.Enum;
 using MediatR;
+using Microsoft.EntityFrameworkCore;
 
 namespace Application.Payments.Commands.ConfirmPayment;
 
-internal sealed class ConfirmPaymentCommandHandler(
-    IRepository<Order, int> orderRepository,
-    IRepository<PaymentRecord, int> paymentRepository,
-    IPaymentGateway gateway,
-    IUnitOfWork uOw) : IRequestHandler<ConfirmPaymentCommand, Envelope>
+internal sealed class ConfirmPaymentCommandHandler(IAppDbContext context, IPaymentGateway gateway) : IRequestHandler<ConfirmPaymentCommand, Envelope>
 {
     public async Task<Envelope> Handle(ConfirmPaymentCommand request, CancellationToken cancellationToken)
     {
-        return await uOw.ExecuteInTransactionAsync(async ct =>
+        return await context.ExecuteInTransactionAsync(async ct =>
         {
-            var paymentRecord = await paymentRepository.GetAsync(new PaymentByIntentIdSpec(request.IntentId), ct: ct);
+            var paymentRecord = await context.PaymentRecords
+                .Where(pr => pr.IntentId == request.IntentId)
+                .FirstOrDefaultAsync(ct);
             
             if (paymentRecord is null) 
                 return Envelope.NotFound("Payment record not found.");
@@ -27,7 +23,10 @@ internal sealed class ConfirmPaymentCommandHandler(
             if (paymentRecord.Status != PaymentStatus.Created)
                 return Envelope.BadRequest("Payment is not in a confirmable state.");
 
-            var order = await orderRepository.GetByIdAsync(paymentRecord.OrderId, ct: ct);
+            var order = await context.Orders
+                .Where(o => o.Id == paymentRecord.OrderId)
+                .FirstOrDefaultAsync(ct);
+            
             if (order is null) 
                 return Envelope.NotFound("Associated order not found.");
 
@@ -37,15 +36,18 @@ internal sealed class ConfirmPaymentCommandHandler(
             {
                 paymentRecord.ChangePaymentStatus(PaymentStatus.Approved);
                 
-                var paidRecords = await paymentRepository.ListAsync(new PaymentByOrderIdSpec(order.Id, [PaymentStatus.Approved]), ct: ct);
+                var totalPaidInRecords = await context.PaymentRecords
+                    .AsNoTracking()
+                    .Where(pr => pr.OrderId == order.Id && pr.Status == PaymentStatus.Approved)
+                    .SumAsync(r => r.Amount, ct);
                 
                 // Incorporate the current record's amount as it is newly approved but not yet committed to DB
-                var totalPaid = paidRecords.Sum(r => r.Amount) + paymentRecord.Amount;
+                var totalPaid = totalPaidInRecords + paymentRecord.Amount;
 
                 if (totalPaid >= order.Total)
                 {
                     order.UpdateStatus(OrderStatus.Confirmed);
-                    orderRepository.Update(order);
+                    context.Orders.Update(order);
                 }
             }
             else
@@ -53,7 +55,7 @@ internal sealed class ConfirmPaymentCommandHandler(
                 paymentRecord.ChangePaymentStatus(PaymentStatus.Failed);
             }
 
-            paymentRepository.Update(paymentRecord);
+            context.PaymentRecords.Update(paymentRecord);
 
             return confirmation.IsSuccess
                 ? Envelope.Ok()

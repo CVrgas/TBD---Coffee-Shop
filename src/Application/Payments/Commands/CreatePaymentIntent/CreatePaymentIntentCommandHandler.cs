@@ -1,33 +1,45 @@
 using Application.Common.Abstractions.Envelope;
-using Application.Common.Abstractions.Persistence;
-using Application.Common.Abstractions.Persistence.Repository;
+using Application.Common.Interfaces;
 using Application.Common.Interfaces.Payment;
-using Application.Payments.Specifications;
-using Domain.Base;
-using Domain.Orders;
+using Domain.Base.Enum;
+using Domain.Orders.Entities;
 using MediatR;
+using Microsoft.EntityFrameworkCore;
 
 namespace Application.Payments.Commands.CreatePaymentIntent;
 
-internal sealed class CreatePaymentIntentCommandHandler(
-    IRepository<Order, int> orderRepository, 
-    IRepository<PaymentRecord, int> paymentRepository, 
-    IPaymentGateway gateway,
-    IUnitOfWork uOw) : IRequestHandler<CreatePaymentIntentCommand, Envelope<PaymentConfirmationResult>>
+internal sealed class CreatePaymentIntentCommandHandler(IAppDbContext context, IPaymentGateway gateway) : IRequestHandler<CreatePaymentIntentCommand, Envelope<PaymentConfirmationResult>>
 {
     public async Task<Envelope<PaymentConfirmationResult>> Handle(CreatePaymentIntentCommand request, CancellationToken cancellationToken)
     {
-        return await uOw.ExecuteInTransactionAsync(async _ =>
+        return await context.ExecuteInTransactionAsync(async _ =>
         {
-            var order = await orderRepository.GetAsync(new OrderWithPaymentsSpec(request.OrderNumber), ct: cancellationToken);
+            var order = await context.Orders
+                .Where(o => o.OrderNumber == request.OrderNumber)
+                .GroupJoin(context.PaymentRecords, o => o.Id, p => p.OrderId, (o, payments) => new
+                {
+                    o.Id,
+                    o.OrderNumber,
+                    o.Total,
+                    o.Currency,
+                    o.Status,
+                    records = payments.Select(p => new
+                    {
+                        p.Amount,
+                        p.Currency,
+                        p.IntentId,
+                        p.ClientSecret,
+                        p.Status
+                    }).ToList()
+                })
+                .FirstOrDefaultAsync(cancellationToken);
         
             if(order is null) return Envelope<PaymentConfirmationResult>.NotFound("order not found.");
             if(order.Status == OrderStatus.Cancelled) return Envelope<PaymentConfirmationResult>.NotFound("order cancelled.");
-
-            var records = await paymentRepository.ListAsync(new PaymentByOrderIdSpec(order.Id), ct: cancellationToken);
-            if (records.Any())
+            
+            if (order.records.Any())
             {
-                var record = records
+                var record = order.records
                     .FirstOrDefault(r => r.Status is PaymentStatus.Created);
             
                 if(record is not null)
@@ -37,7 +49,7 @@ internal sealed class CreatePaymentIntentCommandHandler(
                 }
             }
 
-            var duePayment = order.Total - records.Where(p => p.Status == PaymentStatus.Approved).Sum(r => r.Amount);
+            var duePayment = order.Total - order.records.Where(p => p.Status == PaymentStatus.Approved).Sum(r => r.Amount);
             if(duePayment <= 0) return Envelope<PaymentConfirmationResult>.BadRequest("no payment due.");
             
             var intentResult = await gateway.CreateIntentAsync(order.OrderNumber, duePayment, order.Currency.Code, cancellationToken);
@@ -52,7 +64,8 @@ internal sealed class CreatePaymentIntentCommandHandler(
                 paymentStatus: PaymentStatus.Created
             );
         
-            await paymentRepository.Create(newRecord);
+            await context.PaymentRecords.AddAsync(newRecord, cancellationToken);
+            await context.SaveChangesAsync(cancellationToken);
             return  Envelope<PaymentConfirmationResult>.Ok(
                 new PaymentConfirmationResult(
                     newRecord.IntentId,
