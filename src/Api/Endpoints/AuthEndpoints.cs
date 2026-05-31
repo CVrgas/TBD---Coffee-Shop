@@ -1,5 +1,7 @@
 using Api.Middlewares;
 using Application.Auth.Commands.Login;
+using Application.Auth.Commands.Logout;
+using Application.Auth.Commands.Refresh;
 using Application.Auth.Commands.Register;
 using Application.Auth.Queries.GetMe;
 using MediatR;
@@ -33,6 +35,19 @@ public static class AuthEndpoints
             .AddEndpointFilter(new ValidationFilter<LoginCommand>())
             .WithSummary("User Login")
             .WithName("Login");
+        
+        group.MapPost("/logout", async ([FromBody] LogoutCommand req, [FromServices] ISender sender, CancellationToken cancellationToken = default) => 
+            await sender.Send(req, cancellationToken))
+            .AddEndpointFilter(new ValidationFilter<LogoutCommand>())
+            .RequireAuthorization()
+            .WithSummary("User Logout")
+            .WithName("Logout");
+        
+        group.MapPost("/refresh", async ([FromBody] RefreshCommand req, [FromServices] ISender sender, CancellationToken cancellationToken = default) => 
+            await sender.Send(req, cancellationToken))
+            .AddEndpointFilter(new ValidationFilter<RefreshCommand>())
+            .WithSummary("Refresh Access Token")
+            .WithName("RefreshToken");
 
         group.MapGet("/me", async ([FromServices] ISender sender, CancellationToken cancellationToken = default) =>
                 await sender.Send(new GetMeQuery(), cancellationToken))

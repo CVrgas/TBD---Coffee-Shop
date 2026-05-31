@@ -1,6 +1,7 @@
 using Domain.Catalog;
 using Domain.Inventory;
 using Domain.Orders.Entities;
+using Domain.Users.Entities;
 using Microsoft.EntityFrameworkCore;
 
 namespace Application.Common.Interfaces;
@@ -14,6 +15,7 @@ public interface IAppDbContext
     DbSet<StockItem> StockItems {get; set;}
     DbSet<StockMovement> StockMovements {get; set;}
     DbSet<Domain.Users.Entities.User> Users {get; set;}
+    DbSet<RefreshToken> RefreshTokens {get; set;}
     DbSet<Order> Orders {get; set;}
     DbSet<OrderItem> OrderItems {get; set;}
     DbSet<PaymentRecord> PaymentRecords {get; set;}
