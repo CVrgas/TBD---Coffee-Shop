@@ -62,6 +62,8 @@ builder.Services.AddSwaggerGen(c =>
             []
         }
     });
+    
+    c.OperationFilter<Infrastructure.OpenApi.IdempotencyKeyOperationFilter>();
 });
 
 builder.Services.AddInfrastructure(builder.Configuration);

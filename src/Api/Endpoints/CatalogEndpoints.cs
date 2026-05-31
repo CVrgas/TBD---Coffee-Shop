@@ -32,11 +32,8 @@ public static class CatalogEndpoints
         var group = endpoints.MapGroup("/products")
             .WithTags("Products");
         
-        group.MapGet("/", async ([AsParameters] PaginatedRequest req, [FromServices] ISender sender, CancellationToken cancellationToken = default) =>
-            {
-                var result = await sender.Send(new GetProductsPaginatedQuery(req), cancellationToken);
-                return result;
-            })
+        group.MapGet("/", async ([AsParameters] PaginatedRequest req, [FromServices] ISender sender, CancellationToken cancellationToken = default) => 
+            await sender.Send(new GetProductsPaginatedQuery(req), cancellationToken))
             .CacheOutput(CachePolicy.Catalog.Name)
             .WithSummary("Get all products paginated");
         

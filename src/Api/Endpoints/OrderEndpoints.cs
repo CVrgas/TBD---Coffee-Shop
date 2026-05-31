@@ -36,7 +36,7 @@ public static class OrderEndpoints
             .AddEndpointFilter(new IdempotentEndpointFilter())
             .WithSummary("Create a new order and reserve stock synchronously");
         
-        group.MapGet("/{orderNumber}", async (string orderNumber, int orderId,[FromServices] ISender sender, CancellationToken cancellationToken = default) => 
+        group.MapGet("/{orderNumber}", async (string orderNumber, [FromServices] ISender sender, CancellationToken cancellationToken = default) => 
             await sender.Send(new GetOrderByNumberQuery(orderNumber), cancellationToken))
             .WithSummary("Get Order");
 
