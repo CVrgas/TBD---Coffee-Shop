@@ -5,7 +5,7 @@ using Domain.Base.ValueObjects;
 
 namespace Domain.Orders.Entities;
 
-public sealed class PaymentRecord : Entity<int>, IHasRowVersion
+public sealed class PaymentRecord : EntityWithRowVersion<int>
 {
     private PaymentRecord() { }
 
@@ -31,7 +31,7 @@ public sealed class PaymentRecord : Entity<int>, IHasRowVersion
             Status = paymentStatus,
             Amount = amount,
             Currency = currency,
-            CreatedAt = DateTime.UtcNow,
+            CreatedAt = DateTimeOffset.UtcNow,
             ClientSecret = clientSecret
         };
     }
@@ -41,9 +41,8 @@ public sealed class PaymentRecord : Entity<int>, IHasRowVersion
     public PaymentStatus Status { get; private set; }
     public decimal Amount { get; private set; }
     public CurrencyCode Currency { get; private set; }
-    public DateTime CreatedAt { get; private set; } = DateTime.UtcNow;
-    public DateTime? UpdatedAt { get; private set; }
-    public byte[] RowVersion { get; private set; } = null!;
+    public DateTimeOffset CreatedAt { get; private set; } = DateTimeOffset.UtcNow;
+    public DateTimeOffset? UpdatedAt { get; private set; }
     public string ClientSecret { get; private set; } = null!;
     
     public void ChangePaymentStatus(PaymentStatus newStatus)
@@ -52,6 +51,6 @@ public sealed class PaymentRecord : Entity<int>, IHasRowVersion
         if(Status == PaymentStatus.Failed)  throw new InvalidOperationException("Payment was declined.");
         
         Status = newStatus;
-        UpdatedAt = DateTime.UtcNow;
+        UpdatedAt = DateTimeOffset.UtcNow;
     }
 }

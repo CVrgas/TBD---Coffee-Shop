@@ -1,7 +1,6 @@
 using Application.Common;
 using Application.Common.Interfaces;
 using Application.Common.Interfaces.Security;
-using Domain.Base.Enum;
 using Domain.Catalog;
 using Domain.Inventory;
 using Domain.Users.Entities;
@@ -108,17 +107,16 @@ public class DataSeeder(ApplicationDbContext context, IPasswordManager passwordH
                 categoryId: pastryCategory.Id
                 )
         };
+        
+        var inactiveProduct = products.FirstOrDefault(p => p.Sku == "PAS-OLD-00");
+        inactiveProduct?.ToggleStatus(false); // Inactive product to test filtering.
 
         await context.Products.AddRangeAsync(products);
         await context.SaveChangesAsync();
-
-        foreach (var product in products)
-        {
-            var stock = StockItem.Initialize(product.Id);
-            stock.AdjustStock(25, StockMovementReason.Unspecified, reference: "seeding");
-            await context.StockItems.AddAsync(stock);
-        }
         
+        var stockItems = products.Select(p => GenerateStockItem(p.Id, 25)).ToList();
+        await context.StockItems.AddRangeAsync(stockItems);
+
         await  context.SaveChangesAsync();
     }
 
